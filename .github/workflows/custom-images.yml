@@ -50,9 +50,11 @@ jobs:
         run: make staging
       - name: Install test browser
         run: pnpm --dir web exec playwright install --with-deps chromium
-      - name: Verify localized title and stable detail URL in browser
+      - name: Verify localized title, stable URL, and Chinese search in browser
         env:
           PLAYWRIGHT_BASE_URL: http://localhost
+          E2E_ADMIN_USERNAME: admin
+          E2E_ADMIN_PASSWORD: Admin@staging2026
         run: pnpm --dir web exec playwright test e2e/my-skills-navigation.spec.ts
       - uses: actions/upload-artifact@v4
         if: always()
