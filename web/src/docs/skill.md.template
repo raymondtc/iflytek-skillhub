@@ -1,7 +1,7 @@
 ---
 name: skillhub-cli
 description: Connect an Agent to a SkillHub registry and use the official SkillHub CLI to search, install, list, or explicitly upgrade SkillHub skills. Use when a user asks to connect SkillHub, install a SkillHub skill, or manage skills previously installed from SkillHub.
-version: 2.0.2
+version: 2.0.3-display-name.1
 license: Apache-2.0
 ---
 
@@ -150,6 +150,17 @@ skillhub upgrade @<namespace>/<slug> \
 ```
 
 Show the plan and ask before applying an available upgrade. The CLI uses `.skillhub/metadata.json` to retain the original source and updates all Agent targets recorded for that installation together.
+
+## 中文展示名
+
+本 registry 支持可选的中文展示名，写在 `SKILL.md` frontmatter 的 `metadata` 下：
+
+```yaml
+metadata:
+  display-name: 示例技能
+```
+
+保留原英文 `name`；修改展示名时发布新版本，发布生效后页面与搜索使用新标题。
 
 ## Completion Check
 

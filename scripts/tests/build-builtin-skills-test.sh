@@ -27,7 +27,7 @@ cmp \
 test -f "$REPO_ROOT/builtin-skills/skills/skillhub-cli/references/cli-operations.md"
 grep -F 'npm install --global @astron-team/skillhub' \
   "$REPO_ROOT/builtin-skills/skills/skillhub-cli/SKILL.md" >/dev/null
-grep -F 'version: 2.0.2' \
+grep -F 'version: 2.0.3-display-name.1' \
   "$REPO_ROOT/builtin-skills/skills/skillhub-cli/SKILL.md" >/dev/null
 grep -F 'separately confirms removal of that exact identified launcher' \
   "$REPO_ROOT/builtin-skills/skills/skillhub-cli/SKILL.md" >/dev/null
@@ -101,6 +101,7 @@ PY
 runtime_manifest="$REPO_ROOT/server/skillhub-app/src/main/resources/builtin-skills/manifest.json"
 python3 - "$first/artifacts.json" "$runtime_manifest" <<'PY'
 import json
+import hashlib
 import sys
 from pathlib import Path
 from urllib.parse import urlsplit
@@ -127,6 +128,13 @@ for coordinate in packaged_runtime_coordinates:
     runtime_item = runtime_by_coordinate[coordinate]
     assert runtime_item["sha256"] == artifact["sha256"], coordinate
     parsed_url = urlsplit(runtime_item["url"])
+    if parsed_url.scheme == "classpath":
+        assert coordinate[0] == "skillhub-cli", coordinate
+        assert parsed_url.path == "builtin-skills/" + artifact["file"], coordinate
+        assert not parsed_url.netloc and not parsed_url.query and not parsed_url.fragment, coordinate
+        bundled = Path(sys.argv[2]).parent / artifact["file"]
+        assert hashlib.sha256(bundled.read_bytes()).hexdigest() == artifact["sha256"], coordinate
+        continue
     assert parsed_url.scheme == "https", coordinate
     assert parsed_url.hostname == "bjcdn.openstorage.cn", coordinate
     assert not parsed_url.query and not parsed_url.fragment, coordinate

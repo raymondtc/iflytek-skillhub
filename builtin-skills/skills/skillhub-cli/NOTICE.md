@@ -18,3 +18,7 @@ SkillHub adaptation version: `2.0.2`.
 - Preserved exact registry, coordinate, version, Agent target, authentication, and integrity boundaries.
 - Removed automatic public-registry fallback for exact installs and private discovery queries.
 - Required read-only launcher provenance checks and exact user confirmation before package-manager removal.
+
+## Display-name supplement
+
+Custom version: `2.0.3-display-name.1`, based on built-in `skillhub-cli` version `2.0.2`. Added a brief optional `metadata.display-name` example to the original CLI guide; original CLI workflows and package identity are retained.

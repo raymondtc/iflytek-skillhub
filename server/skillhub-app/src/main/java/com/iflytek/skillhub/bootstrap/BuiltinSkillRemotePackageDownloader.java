@@ -64,6 +64,9 @@ public class BuiltinSkillRemotePackageDownloader {
     }
 
     public Optional<byte[]> download(URI uri) {
+        if (uri != null && "classpath".equals(uri.getScheme())) {
+            return readBundledPackage(uri);
+        }
         if (!isAllowedUrl(uri)) {
             log.warn("Skipping built-in skill package download because URL is not allowed: {}", safeUrl(uri));
             return Optional.empty();
@@ -99,6 +102,21 @@ public class BuiltinSkillRemotePackageDownloader {
 
     HttpClient httpClient() {
         return httpClient;
+    }
+
+    private Optional<byte[]> readBundledPackage(URI uri) {
+        String path = uri.getSchemeSpecificPart();
+        // Only immutable ZIP resources shipped in this image may bypass HTTP downloading.
+        if (uri.getFragment() != null
+                || !path.matches("builtin-skills/[a-z0-9][a-z0-9._-]*\\.zip")) {
+            return Optional.empty();
+        }
+        try (InputStream body = getClass().getResourceAsStream("/" + path)) {
+            return body == null ? Optional.empty() : readBounded(body);
+        } catch (IOException exception) {
+            log.warn("Failed to read bundled built-in skill package {}: {}", path, exception.getMessage());
+            return Optional.empty();
+        }
     }
 
     static boolean isAllowedUrl(URI uri) {

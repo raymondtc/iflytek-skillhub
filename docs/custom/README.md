@@ -30,3 +30,16 @@ deployment repository.
 Packages inherit this repository's access where supported. If anonymous pulls
 are desired, set each GHCR package's visibility to public; otherwise consumers
 need a token with read:packages. No personal token is stored in this workflow.
+
+The original `@global/skillhub-cli` has a brief display-name note in custom
+version `2.0.3-display-name.1`; `/registry/skill.md` carries the same format example.
+The verified ZIP is bundled under `server/skillhub-app/src/main/resources/builtin-skills/`
+and selected by its classpath manifest entry, so startup updates the existing system-owned
+Skill without a second helper or an external package host. The existing checksum, package
+validation, immutable-version, and publisher checks still apply.
+
+When upgrading upstream, retain the short note in the CLI guide and matching
+bootstrap guide, choose a new custom Skill version above the installed one, run
+`make build-builtin-skills`, copy the resulting CLI ZIP into the bundled resources, and
+update its manifest version, classpath location, and SHA-256 together. Keep the bundled
+resource loader patch. Do not replace an already published Skill version's contents.

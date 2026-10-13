@@ -20,6 +20,7 @@ import java.net.http.HttpHeaders;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
@@ -30,6 +31,45 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 class BuiltinSkillRemotePackageDownloaderTest {
+
+    @Test
+    void loadsBundledCliPackageWithoutSendingHttpRequests() {
+        FakeHttpClient client = new FakeHttpClient(200, new byte[] {1});
+        BuiltinSkillRemotePackageDownloader downloader = new BuiltinSkillRemotePackageDownloader(
+                new SkillPublishProperties(), client);
+
+        byte[] bytes = downloader.download(URI.create(
+                "classpath:builtin-skills/skillhub-cli-2.0.3-display-name.1.zip")).orElseThrow();
+
+        assertThat(bytes).startsWith((byte) 'P', (byte) 'K');
+        assertThat(client.sendCalls).isZero();
+    }
+
+    @Test
+    void rejectsUnbundledPathsAndMissingResourcesWithoutSendingHttpRequests() {
+        FakeHttpClient client = new FakeHttpClient(200, new byte[] {1});
+        BuiltinSkillRemotePackageDownloader downloader = new BuiltinSkillRemotePackageDownloader(
+                new SkillPublishProperties(), client);
+
+        for (String path : List.of("classpath:application.yml", "classpath:builtin-skills/../app.zip",
+                "classpath:builtin-skills/missing.zip", "classpath:builtin-skills/app.zip#fragment",
+                "classpath:builtin-skills/app.zip?query=1", "file:/tmp/app.zip")) {
+            assertThat(downloader.download(URI.create(path))).isEmpty();
+        }
+        assertThat(client.sendCalls).isZero();
+    }
+
+    @Test
+    void enforcesPackageSizeLimitForBundledResources() {
+        SkillPublishProperties properties = new SkillPublishProperties();
+        properties.setMaxPackageSize(1);
+        FakeHttpClient client = new FakeHttpClient(200, new byte[] {1});
+        BuiltinSkillRemotePackageDownloader downloader = new BuiltinSkillRemotePackageDownloader(properties, client);
+
+        assertThat(downloader.download(URI.create(
+                "classpath:builtin-skills/skillhub-cli-2.0.3-display-name.1.zip"))).isEmpty();
+        assertThat(client.sendCalls).isZero();
+    }
 
     @Test
     void acceptsAllowedHttpsCdnHostsOnly() {

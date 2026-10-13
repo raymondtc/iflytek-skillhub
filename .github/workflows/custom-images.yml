@@ -41,6 +41,8 @@ jobs:
         run: pnpm --dir web install --frozen-lockfile
       - name: Backend tests
         run: make test-backend-app
+      - name: Built-in skill package checks
+        run: make test-builtin-skills
       - name: Frontend checks
         run: |
           make typecheck-web
