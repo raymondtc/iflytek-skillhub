@@ -15,19 +15,19 @@ class SkillMetadataParserTest {
     void parsesDisplayNameWithoutChangingPackageName() {
         SkillMetadata metadata = parser.parse("""
                 ---
-                name: paper-kite-helper
-                description: Generate fictional paper kite craft instructions
+                name: example-skill
+                description: An example skill for demonstration
                 metadata:
                   version: "1.0.0"
-                  display-name: "  纸鸢制作小助手  "
+                  display-name: "  示例技能  "
                 ---
                 Instructions
                 """);
 
-        assertEquals("纸鸢制作小助手", metadata.displayName());
-        assertEquals("paper-kite-helper", metadata.name());
+        assertEquals("示例技能", metadata.displayName());
+        assertEquals("example-skill", metadata.name());
         assertEquals("1.0.0", metadata.version());
-        assertEquals("纸鸢制作小助手", new com.fasterxml.jackson.databind.ObjectMapper()
+        assertEquals("示例技能", new com.fasterxml.jackson.databind.ObjectMapper()
                 .convertValue(metadata, SkillMetadata.class).displayName());
     }
 
