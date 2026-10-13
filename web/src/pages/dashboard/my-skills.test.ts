@@ -145,6 +145,29 @@ describe('MySkillsPage', () => {
     })
   })
 
+  it('renders a localized display name independently of the package slug', () => {
+    useMySkillsMock.mockReturnValue({
+      data: {
+        items: [{
+          id: 1,
+          displayName: '线上场景分析与调优',
+          namespace: 'team-ai',
+          slug: 'online-scenario-analysis-tuning',
+          downloadCount: 0,
+          status: 'ACTIVE',
+          visibility: 'PUBLIC',
+        }],
+        total: 1,
+        page: 0,
+        size: 10,
+      },
+      isLoading: false,
+    })
+
+    const markup = renderToStaticMarkup(createElement(MySkillsPage))
+    expect(markup).toMatch(/<h3[^>]*>线上场景分析与调优<\/h3>/)
+  })
+
   it('navigates to publish page with namespace and visibility when update is clicked', () => {
     renderToStaticMarkup(createElement(MySkillsPage))
 
