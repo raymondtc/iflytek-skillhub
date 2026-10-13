@@ -1,0 +1,133 @@
+name: Custom SkillHub Images
+
+on:
+  push:
+    branches: ['company/**']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: custom-images-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  UPSTREAM_VERSION: v0.2.22
+
+jobs:
+  verify:
+    if: github.repository == 'raymondtc/iflytek-skillhub'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: web/package.json
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: web/pnpm-lock.yaml
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: maven
+      - name: Install frontend dependencies
+        run: pnpm --dir web install --frozen-lockfile
+      - name: Backend tests
+        run: make test-backend-app
+      - name: Frontend checks
+        run: |
+          make typecheck-web
+          make lint-web
+          make test-frontend
+      - name: Staging regression in disposable CI containers
+        run: make staging
+      - name: Install test browser
+        run: pnpm --dir web exec playwright install --with-deps chromium
+      - name: Verify localized title and stable detail URL in browser
+        env:
+          PLAYWRIGHT_BASE_URL: http://localhost
+        run: pnpm --dir web exec playwright test e2e/my-skills-navigation.spec.ts
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: custom-image-test-results
+          path: |
+            server/**/target/surefire-reports/
+            web/playwright-report/
+            web/test-results/
+          retention-days: 14
+      - name: Container logs on failure
+        if: failure()
+        run: docker compose -p skillhub-staging -f docker-compose.yml -f docker-compose.staging.yml logs --tail 100
+      - name: Stop disposable test containers
+        if: always()
+        run: make staging-down
+
+  publish:
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      fail-fast: false
+      matrix:
+        component: [server, web]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Immutable image coordinates
+        id: image
+        env:
+          COMPONENT: ${{ matrix.component }}
+        run: |
+          image="ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/skillhub-${COMPONENT}"
+          version="${UPSTREAM_VERSION}-custom-${GITHUB_SHA:0:12}"
+          echo "name=$image" >> "$GITHUB_OUTPUT"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+      - name: Build with upstream Dockerfile and publish
+        id: build
+        uses: docker/build-push-action@v6
+        with:
+          context: ./${{ matrix.component }}
+          file: ./${{ matrix.component }}/Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: |
+            ${{ steps.image.outputs.name }}:${{ steps.image.outputs.version }}
+            ${{ steps.image.outputs.name }}:sha-${{ github.sha }}
+          labels: |
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.version=${{ steps.image.outputs.version }}
+            io.skillhub.upstream.version=${{ env.UPSTREAM_VERSION }}
+          cache-from: type=gha,scope=custom-${{ matrix.component }}
+          cache-to: type=gha,mode=max,scope=custom-${{ matrix.component }}
+      - name: Record published digest
+        env:
+          IMAGE: ${{ steps.image.outputs.name }}
+          VERSION: ${{ steps.image.outputs.version }}
+          DIGEST: ${{ steps.build.outputs.digest }}
+        run: |
+          printf '%s:%s\n%s@%s\n' "$IMAGE" "$VERSION" "$IMAGE" "$DIGEST" > image.txt
+          cat image.txt >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: image-${{ matrix.component }}
+          path: image.txt
