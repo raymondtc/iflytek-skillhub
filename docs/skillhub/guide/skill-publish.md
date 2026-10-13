@@ -72,10 +72,10 @@ Summarize the supplied text as numbered steps.
 
 ```yaml
 ---
-name: paper-kite-helper
-description: 生成虚构的纸鸢手工制作说明。
+name: example-skill
+description: 用于演示的示例技能。
 metadata:
-  display-name: 纸鸢制作小助手
+  display-name: 示例技能
   version: "1.0.0"
 ---
 ```

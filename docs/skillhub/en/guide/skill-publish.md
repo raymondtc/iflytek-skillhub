@@ -77,10 +77,10 @@ add the optional `metadata.display-name` field:
 
 ```yaml
 ---
-name: paper-kite-helper
-description: Generate fictional paper kite craft instructions.
+name: example-skill
+description: An example skill for demonstration.
 metadata:
-  display-name: 纸鸢制作小助手
+  display-name: 示例技能
   version: "1.0.0"
 ---
 ```

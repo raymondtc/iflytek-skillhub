@@ -15,7 +15,7 @@ test.describe('My Skills Navigation (Real API)', () => {
 
     try {
       const namespace = await builder.ensureWritableNamespace()
-      const displayName = '纸鸢制作小助手'
+      const displayName = '示例技能'
       const skill = await builder.publishSkill(namespace.slug, { displayName })
 
       await page.goto('/dashboard/skills')

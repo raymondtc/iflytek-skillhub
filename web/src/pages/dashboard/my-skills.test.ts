@@ -150,9 +150,9 @@ describe('MySkillsPage', () => {
       data: {
         items: [{
           id: 1,
-          displayName: '纸鸢制作小助手',
+          displayName: '示例技能',
           namespace: 'team-ai',
-          slug: 'paper-kite-helper',
+          slug: 'example-skill',
           downloadCount: 0,
           status: 'ACTIVE',
           visibility: 'PUBLIC',
@@ -165,7 +165,7 @@ describe('MySkillsPage', () => {
     })
 
     const markup = renderToStaticMarkup(createElement(MySkillsPage))
-    expect(markup).toMatch(/<h3[^>]*>纸鸢制作小助手<\/h3>/)
+    expect(markup).toMatch(/<h3[^>]*>示例技能<\/h3>/)
   })
 
   it('navigates to publish page with namespace and visibility when update is clicked', () => {
