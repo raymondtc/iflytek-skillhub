@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test'
 import { setEnglishLocale } from './helpers/auth-fixtures'
-import { registerSession } from './helpers/session'
+import { loginWithCredentials, registerSession } from './helpers/session'
 import { E2eTestDataBuilder } from './helpers/test-data-builder'
 
 test.describe('My Skills Navigation (Real API)', () => {
@@ -9,7 +9,7 @@ test.describe('My Skills Navigation (Real API)', () => {
     await registerSession(page, testInfo)
   })
 
-  test('shows a localized title while navigating with the original skill slug', async ({ page }, testInfo) => {
+  test('shows a localized title while navigating with the original skill slug', async ({ page, browser }, testInfo) => {
     const builder = new E2eTestDataBuilder(page, testInfo)
     await builder.init()
 
@@ -29,6 +29,26 @@ test.describe('My Skills Navigation (Real API)', () => {
 
       await page.getByRole('button', { name: 'Back' }).click()
       await expect(page).toHaveURL('/dashboard/skills')
+
+      const adminContext = await browser.newContext()
+      try {
+        const adminPage = await adminContext.newPage()
+        await loginWithCredentials(adminPage, {
+          username: process.env.E2E_ADMIN_USERNAME ?? process.env.BOOTSTRAP_ADMIN_USERNAME ?? 'admin',
+          password: process.env.E2E_ADMIN_PASSWORD ?? process.env.BOOTSTRAP_ADMIN_PASSWORD ?? 'ChangeMe!2026',
+        }, testInfo)
+        const adminBuilder = new E2eTestDataBuilder(adminPage, testInfo)
+        await adminBuilder.init()
+        const reviewId = await adminBuilder.waitForPendingReview(skill.namespace, skill.slug, skill.version)
+        await adminBuilder.approveReview(reviewId)
+      } finally {
+        await adminContext.close()
+      }
+
+      // The Chinese query appears only in display-name, not the slug or description.
+      await builder.waitForSearchResult(displayName, skill.slug)
+      await page.goto(`/search?q=${encodeURIComponent(displayName)}`)
+      await expect(page.getByRole('heading', { name: displayName, exact: true })).toBeVisible()
     } finally {
       await builder.cleanup()
     }
