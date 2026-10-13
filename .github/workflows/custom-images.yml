@@ -1,0 +1,69 @@
+name: Custom SkillHub Images
+
+on:
+  push:
+    branches: ['ci/verify-display-name-main']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: custom-images-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    if: github.repository == 'raymondtc/iflytek-skillhub'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: web/package.json
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: web/pnpm-lock.yaml
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: maven
+      - name: Install frontend dependencies
+        run: pnpm --dir web install --frozen-lockfile
+      - name: Backend tests
+        run: make test-backend-app
+      - name: Frontend checks
+        run: |
+          make typecheck-web
+          make lint-web
+          make test-frontend
+      - name: Staging regression in disposable CI containers
+        run: make staging
+      - name: Install test browser
+        run: pnpm --dir web exec playwright install --with-deps chromium
+      - name: Verify localized title and stable detail URL in browser
+        env:
+          PLAYWRIGHT_BASE_URL: http://localhost
+        run: pnpm --dir web exec playwright test e2e/my-skills-navigation.spec.ts
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: custom-image-test-results
+          path: |
+            server/**/target/surefire-reports/
+            web/playwright-report/
+            web/test-results/
+          retention-days: 14
+      - name: Container logs on failure
+        if: failure()
+        run: docker compose -p skillhub-staging -f docker-compose.yml -f docker-compose.staging.yml logs --tail 100
+      - name: Stop disposable test containers
+        if: always()
+        run: make staging-down
+
