@@ -9,19 +9,23 @@ test.describe('My Skills Navigation (Real API)', () => {
     await registerSession(page, testInfo)
   })
 
-  test('opens seeded skill detail from dashboard list and returns back', async ({ page }, testInfo) => {
+  test('shows a localized title while navigating with the original skill slug', async ({ page }, testInfo) => {
     const builder = new E2eTestDataBuilder(page, testInfo)
     await builder.init()
 
     try {
       const namespace = await builder.ensureWritableNamespace()
-      const skill = await builder.publishSkill(namespace.slug)
+      const displayName = '线上场景分析与调优'
+      const skill = await builder.publishSkill(namespace.slug, { displayName })
 
       await page.goto('/dashboard/skills')
       await expect(page.getByRole('heading', { name: 'My Skills' })).toBeVisible()
 
-      await page.getByText(`@${skill.namespace}`).first().click()
+      await expect(page.getByRole('heading', { name: displayName, exact: true })).toBeVisible()
+      await page.getByRole('heading', { name: displayName, exact: true }).click()
       await expect(page).toHaveURL(new RegExp(`/space/${skill.namespace}/${skill.slug}\\?returnTo=%2Fdashboard%2Fskills$`))
+
+      await expect(page.getByRole('heading', { name: displayName, exact: true })).toBeVisible()
 
       await page.getByRole('button', { name: 'Back' }).click()
       await expect(page).toHaveURL('/dashboard/skills')
