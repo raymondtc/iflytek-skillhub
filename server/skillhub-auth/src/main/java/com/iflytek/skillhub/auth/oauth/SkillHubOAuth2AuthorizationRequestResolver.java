@@ -13,6 +13,7 @@ import org.springframework.security.oauth2.client.web.DefaultOAuth2Authorization
 import org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationRequest;
 import org.springframework.security.oauth2.core.endpoint.OAuth2ParameterNames;
 import org.springframework.stereotype.Component;
+import org.springframework.security.oauth2.core.oidc.OidcScopes;
 
 /**
  * OAuth2 authorization request resolver that preserves a sanitized post-login redirect target in
@@ -53,7 +54,8 @@ public class SkillHubOAuth2AuthorizationRequestResolver
             OAuth2AuthorizationRequest probe = builder.build();
             String registrationId = probe.getAttribute(OAuth2ParameterNames.REGISTRATION_ID);
             ProviderAuthorizationRequestCustomizer customizer = byProvider.get(registrationId);
-            if (customizer != null) {
+            // Preserve standard OIDC scopes and nonce when using an identity broker.
+            if (customizer != null && !probe.getScopes().contains(OidcScopes.OPENID)) {
                 customizer.customize(builder);
             }
         });

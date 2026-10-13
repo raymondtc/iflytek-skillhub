@@ -44,6 +44,55 @@ class DispatchingTokenResponseClientTest {
         assertThat(result.getAccessToken().getTokenValue()).isEqualTo("from-default");
     }
 
+    @Test
+    void explicitOidcRegistrationUsesStandardExchangeDespiteNativeProviderName() {
+        var request = grantRequest("dingtalk");
+        var oidcRegistration = ClientRegistration.withClientRegistration(request.getClientRegistration())
+                .scope("openid", "profile", "email")
+                .jwkSetUri("https://provider.example/jwks")
+                .build();
+        var standard = response("standard-oidc");
+        var client = new DispatchingTokenResponseClient(
+                List.of(stubProvider("dingtalk", response("native-dingtalk"))),
+                grant -> standard);
+
+        assertThat(client.getTokenResponse(new OAuth2AuthorizationCodeGrantRequest(
+                oidcRegistration, request.getAuthorizationExchange()))).isSameAs(standard);
+    }
+
+    @Test
+    void oidcBrokerReceivesStandardFormAndKeepsIdToken() {
+        var template = OAuth2TokenResponseClients.standardRestTemplate();
+        var server = org.springframework.test.web.client.MockRestServiceServer.createServer(template);
+        server.expect(org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo(
+                        "https://provider.example/token"))
+                .andExpect(org.springframework.test.web.client.match.MockRestRequestMatchers.content()
+                        .contentTypeCompatibleWith(org.springframework.http.MediaType.APPLICATION_FORM_URLENCODED))
+                .andExpect(org.springframework.test.web.client.match.MockRestRequestMatchers.content()
+                        .string(org.hamcrest.Matchers.containsString("grant_type=authorization_code")))
+                .andExpect(org.springframework.test.web.client.match.MockRestRequestMatchers.header(
+                        "Authorization", org.hamcrest.Matchers.startsWith("Basic ")))
+                .andRespond(org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess(
+                        "{\"access_token\":\"example-access\",\"token_type\":\"Bearer\",\"id_token\":\"example-id-token\"}",
+                        org.springframework.http.MediaType.APPLICATION_JSON));
+        var standard = new org.springframework.security.oauth2.client.endpoint.DefaultAuthorizationCodeTokenResponseClient();
+        standard.setRestOperations(template);
+        var client = new DispatchingTokenResponseClient(
+                List.of(stubProvider("dingtalk", response("native-response"))), standard);
+        var original = grantRequest("dingtalk");
+        var registration = ClientRegistration.withClientRegistration(original.getClientRegistration())
+                .scope("openid", "profile", "email")
+                .jwkSetUri("https://provider.example/jwks")
+                .build();
+
+        var result = client.getTokenResponse(new OAuth2AuthorizationCodeGrantRequest(
+                registration, original.getAuthorizationExchange()));
+
+        assertThat(result.getAccessToken().getTokenValue()).isEqualTo("example-access");
+        assertThat(result.getAdditionalParameters()).containsEntry("id_token", "example-id-token");
+        server.verify();
+    }
+
     private static ProviderTokenResponseClient stubProvider(
             String provider,
             OAuth2AccessTokenResponse response

@@ -133,6 +133,25 @@ class OAuth2AuthorizationRequestResolverTest {
         assertThat(authorizationRequest.getScopes()).containsExactly("read:user");
     }
 
+    @Test
+    void explicitOidcBrokerPreservesScopesAndNonceDespiteNativeProviderName() {
+        var registration = ClientRegistration.withClientRegistration(dingTalkRegistration())
+                .authorizationUri("https://identity.example/authorize")
+                .tokenUri("https://identity.example/token")
+                .jwkSetUri("https://identity.example/jwks")
+                .scope("openid", "profile", "email")
+                .build();
+        var oidcResolver = resolverFor(registration, new DingTalkAuthorizationRequestCustomizer());
+        var request = oidcResolver.resolve(
+                new MockHttpServletRequest("GET", "/oauth2/authorization/dingtalk"), "dingtalk");
+
+        assertThat(request.getScopes()).containsExactlyInAnyOrder("openid", "profile", "email");
+        assertThat(request.getAdditionalParameters()).containsKey("nonce");
+        assertThat(request.getAuthorizationRequestUri()).contains("profile", "email", "nonce=");
+        assertThat(request.getAuthorizationRequestUri()).doesNotContain("prompt=consent");
+        assertThat(request.<String>getAttribute("registration_id")).isEqualTo("dingtalk");
+    }
+
     private static SkillHubOAuth2AuthorizationRequestResolver resolverFor(
             ClientRegistration registration,
             ProviderAuthorizationRequestCustomizer customizer

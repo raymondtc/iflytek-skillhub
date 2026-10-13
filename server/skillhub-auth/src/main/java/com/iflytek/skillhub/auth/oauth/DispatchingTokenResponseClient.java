@@ -9,6 +9,7 @@ import org.springframework.security.oauth2.client.endpoint.OAuth2AuthorizationCo
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.oauth2.core.endpoint.OAuth2AccessTokenResponse;
 import org.springframework.stereotype.Component;
+import org.springframework.security.oauth2.core.oidc.OidcScopes;
 
 /**
  * Routes the authorization-code token exchange to a {@link ProviderTokenResponseClient} when one
@@ -40,6 +41,11 @@ public class DispatchingTokenResponseClient
 
     @Override
     public OAuth2AccessTokenResponse getTokenResponse(OAuth2AuthorizationCodeGrantRequest request) {
+        // Explicit OIDC registrations may reuse a native provider name for an identity broker.
+        var scopes = request.getClientRegistration().getScopes();
+        if (scopes != null && scopes.contains(OidcScopes.OPENID)) {
+            return delegate.getTokenResponse(request);
+        }
         String registrationId = request.getClientRegistration().getRegistrationId();
         ProviderTokenResponseClient override = overrides.get(registrationId);
         return (override != null ? override : delegate).getTokenResponse(request);
