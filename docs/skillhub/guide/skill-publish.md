@@ -72,10 +72,10 @@ Summarize the supplied text as numbered steps.
 
 ```yaml
 ---
-name: online-scenario-analysis-tuning
-description: 分析线上场景表现，定位问题并提出调优建议。
+name: paper-kite-helper
+description: 生成虚构的纸鸢手工制作说明。
 metadata:
-  display-name: 线上场景分析与调优
+  display-name: 纸鸢制作小助手
   version: "1.0.0"
 ---
 ```

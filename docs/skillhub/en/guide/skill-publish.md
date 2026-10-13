@@ -77,10 +77,10 @@ add the optional `metadata.display-name` field:
 
 ```yaml
 ---
-name: online-scenario-analysis-tuning
-description: Analyze online scenarios and suggest improvements.
+name: paper-kite-helper
+description: Generate fictional paper kite craft instructions.
 metadata:
-  display-name: 线上场景分析与调优
+  display-name: 纸鸢制作小助手
   version: "1.0.0"
 ---
 ```

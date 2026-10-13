@@ -150,9 +150,9 @@ describe('MySkillsPage', () => {
       data: {
         items: [{
           id: 1,
-          displayName: '线上场景分析与调优',
+          displayName: '纸鸢制作小助手',
           namespace: 'team-ai',
-          slug: 'online-scenario-analysis-tuning',
+          slug: 'paper-kite-helper',
           downloadCount: 0,
           status: 'ACTIVE',
           visibility: 'PUBLIC',
@@ -165,7 +165,7 @@ describe('MySkillsPage', () => {
     })
 
     const markup = renderToStaticMarkup(createElement(MySkillsPage))
-    expect(markup).toMatch(/<h3[^>]*>线上场景分析与调优<\/h3>/)
+    expect(markup).toMatch(/<h3[^>]*>纸鸢制作小助手<\/h3>/)
   })
 
   it('navigates to publish page with namespace and visibility when update is clicked', () => {

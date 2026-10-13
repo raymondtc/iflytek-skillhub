@@ -1936,7 +1936,7 @@ class SkillPublishServiceTest {
         PublishFixture fixture = stubValidPublishInputs("test-ns", "user-100", "test-skill", "test-skill", "1.0.0", false);
         when(skillMetadataParser.parse(anyString())).thenReturn(new SkillMetadata(
                 "test-skill", "Test", "1.0.0", "Body",
-                Map.of("metadata", Map.of("display-name", "线上场景分析与调优"))));
+                Map.of("metadata", Map.of("display-name", "纸鸢制作小助手"))));
 
         SkillPublishService.PublishResult result = service.publishFromEntries(
                 "test-ns", fixture.entries(), "user-100", SkillVisibility.PUBLIC, Set.of("SUPER_ADMIN"));
@@ -1944,10 +1944,10 @@ class SkillPublishServiceTest {
         assertEquals("test-skill", result.slug());
         ArgumentCaptor<Skill> saved = ArgumentCaptor.forClass(Skill.class);
         verify(skillRepository).save(saved.capture());
-        assertEquals("线上场景分析与调优", saved.getValue().getDisplayName());
+        assertEquals("纸鸢制作小助手", saved.getValue().getDisplayName());
         JsonNode snapshot = objectMapper.readTree(result.version().getParsedMetadataJson());
         assertEquals("test-skill", snapshot.path("name").asText());
-        assertEquals("线上场景分析与调优", snapshot.path("frontmatter").path("metadata").path("display-name").asText());
+        assertEquals("纸鸢制作小助手", snapshot.path("frontmatter").path("metadata").path("display-name").asText());
     }
 
     @Test
