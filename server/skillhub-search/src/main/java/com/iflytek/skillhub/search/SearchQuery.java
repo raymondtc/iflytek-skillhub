@@ -13,8 +13,14 @@ public record SearchQuery(
         int page,
         int size,
         List<String> labelSlugs,
-        boolean requireInstallableLatest
+        boolean requireInstallableLatest,
+        String businessRole
 ) {
+    public SearchQuery(String keyword, Long namespaceId, SearchVisibilityScope visibilityScope,
+            String sortBy, int page, int size, List<String> labelSlugs, boolean requireInstallableLatest) {
+        this(keyword, namespaceId, visibilityScope, sortBy, page, size, labelSlugs, requireInstallableLatest, null);
+    }
+
     public SearchQuery(
             String keyword,
             Long namespaceId,

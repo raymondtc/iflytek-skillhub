@@ -50,11 +50,16 @@ public class ResourceDiscoveryAppService {
             Set<Long> memberNamespaceIds,
             List<String> labelSlugs
     ) {
+        return search(keyword, namespace, resourceType, sort, page, size, memberNamespaceIds, labelSlugs, null);
+    }
+
+    public ResourceSearchResponse search(String keyword, String namespace, String resourceType, String sort,
+            int page, int size, Set<Long> memberNamespaceIds, List<String> labelSlugs, String businessRole) {
         int safePage = Math.max(0, page);
         int safeSize = Math.min(Math.max(size, 1), 100);
         var result = queryService.search(new ResourceQuery(
                 keyword, namespace, resourceType, sort, safePage, safeSize, memberNamespaceIds,
-                normalizeLabelSlugs(labelSlugs)));
+                normalizeLabelSlugs(labelSlugs), com.iflytek.skillhub.domain.shared.BusinessRoles.filter(businessRole)));
         Map<Long, List<SkillLabelDto>> labelsBySuiteId =
                 suiteLabelProjectionService.labelsBySuiteIds(result.items().stream()
                         .filter(item -> "SUITE".equals(item.resourceType()))

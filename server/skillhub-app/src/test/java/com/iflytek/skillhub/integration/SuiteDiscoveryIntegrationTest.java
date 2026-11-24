@@ -541,6 +541,79 @@ class SuiteDiscoveryIntegrationTest {
                 });
     }
 
+    @Test
+    void businessRolesFilterBothTypesBeforeCountingAndPagingWithoutLeakingSources() {
+        Namespace ns = entityManager.persistFlushFind(new Namespace("role-team", "Role Team", "owner"));
+        Skill publicSkill = publishedSkill(ns, "public", "owner", SkillVisibility.PUBLIC, "Public").skill();
+        Skill memberSkill = publishedSkill(ns, "member", "owner", SkillVisibility.NAMESPACE_ONLY, "Member").skill();
+        Skill privateSkill = publishedSkill(ns, "private", "owner", SkillVisibility.PRIVATE, "Private").skill();
+        Skill oldSkill = publishedSkill(ns, "old", "owner", SkillVisibility.PUBLIC, "Old").skill();
+        SkillSuite publicSuite = roleSuite(ns, "public", SkillVisibility.PUBLIC);
+        SkillSuite memberSuite = roleSuite(ns, "member", SkillVisibility.NAMESPACE_ONLY);
+        SkillSuite privateSuite = roleSuite(ns, "private", SkillVisibility.PRIVATE);
+        for (Skill skill : List.of(publicSkill, memberSkill, privateSkill)) {
+            skill.setBusinessRoles(List.of("sales", "support", "sales"));
+        }
+        for (SkillSuite suite : List.of(publicSuite, memberSuite, privateSuite)) {
+            suite.setBusinessRoles(List.of("sales", "support", "sales"));
+        }
+        entityManager.flush();
+        entityManager.clear();
+        assertThat(entityManager.find(Skill.class, oldSkill.getId()).getBusinessRoles()).isEmpty();
+        assertThat(entityManager.find(Skill.class, publicSkill.getId()).getBusinessRoles())
+                .containsExactly("sales", "support");
+        assertThat(entityManager.find(SkillSuite.class, publicSuite.getId()).getBusinessRoles())
+                .containsExactly("sales", "support");
+
+        for (Skill skill : List.of(publicSkill, memberSkill, privateSkill, oldSkill)) {
+            entityManager.getEntityManager().createNativeQuery("""
+                    INSERT INTO skill_search_document(skill_id, namespace_id, namespace_slug, owner_id, title, status, visibility, updated_at)
+                    VALUES (:id, :ns, 'role-team', 'owner', 'Role Test', 'ACTIVE', :visibility, CURRENT_TIMESTAMP)
+                    """).setParameter("id", skill.getId()).setParameter("ns", ns.getId())
+                    .setParameter("visibility", skill.getVisibility().name()).executeUpdate();
+        }
+        var skillSearch = new com.iflytek.skillhub.search.postgres.PostgresFullTextQueryService(entityManager.getEntityManager());
+        var scope = com.iflytek.skillhub.search.SearchVisibilityScope.anonymous();
+        var skillPage = skillSearch.search(new com.iflytek.skillhub.search.SearchQuery(null, ns.getId(), scope,
+                "newest", 0, 1, List.of(), false, "sales"));
+        assertThat(skillPage.skillIds()).containsExactly(publicSkill.getId());
+        assertThat(skillPage.total()).isEqualTo(1);
+        assertThat(skillSearch.search(new com.iflytek.skillhub.search.SearchQuery(null, ns.getId(), scope,
+                "newest", 1, 1, List.of(), false, "sales")).skillIds()).isEmpty();
+
+        var anonymous = appService.search(null, "role-team", null, "newest", 0, 1, Set.of(), List.of(), "sales");
+        var next = appService.search(null, "role-team", null, "newest", 1, 1, Set.of(), List.of(), "sales");
+        assertThat(anonymous.total()).isEqualTo(2);
+        assertThat(next.total()).isEqualTo(2);
+        assertThat(anonymous.items()).hasSize(1);
+        assertThat(next.items()).hasSize(1);
+        assertThat(anonymous.items().getFirst().resourceType()).isNotEqualTo(next.items().getFirst().resourceType());
+        assertThat(appService.search(null, "role-team", null, "newest", 2, 1, Set.of(), List.of(), "sales").items()).isEmpty();
+        assertThat(appService.search(null, "role-team", null, "newest", 0, 20, Set.of(ns.getId()), List.of(), "sales").total())
+                .isEqualTo(4);
+        assertThat(appService.search(null, "role-team", "SKILL", "newest", 0, 20, Set.of(), List.of(), "sales").total()).isEqualTo(1);
+        assertThat(appService.search(null, "role-team", "SUITE", "newest", 0, 20, Set.of(), List.of(), "support").total()).isEqualTo(1);
+        assertThat(appService.search(null, "role-team", null, "newest", 0, 20, Set.of(), List.of(), "sale").total()).isZero();
+        assertThat(appService.search(null, "role-team", null, "newest", 0, 20, Set.of(), List.of()).total()).isEqualTo(3);
+
+        // Clearing is immediately authoritative without a search-index rebuild or version changes.
+        entityManager.find(Skill.class, publicSkill.getId()).setBusinessRoles(List.of());
+        entityManager.find(SkillSuite.class, publicSuite.getId()).setBusinessRoles(List.of());
+        entityManager.flush();
+        assertThat(appService.search(null, "role-team", null, "newest", 0, 20, Set.of(), List.of(), "sales").total()).isZero();
+        assertThat(appService.search(null, "role-team", null, "newest", 0, 20, Set.of(ns.getId()), List.of(), "sales").total()).isEqualTo(2);
+    }
+
+    private SkillSuite roleSuite(Namespace ns, String slug, SkillVisibility visibility) {
+        SkillSuite suite = entityManager.persistFlushFind(new SkillSuite(ns.getId(), slug, slug, "owner"));
+        SkillSuiteVersion version = new SkillSuiteVersion(suite.getId(), "1.0.0", visibility, "owner");
+        version.setDisplayName(slug);
+        version.setStatus(SkillSuiteVersionStatus.PUBLISHED);
+        entityManager.persistAndFlush(version);
+        suite.setLatestVersionId(version.getId());
+        return suite;
+    }
+
     private PublishedSkill publishedSkill(
             Namespace namespace,
             String slug,

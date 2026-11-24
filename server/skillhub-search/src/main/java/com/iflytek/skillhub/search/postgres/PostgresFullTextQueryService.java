@@ -147,6 +147,11 @@ public class PostgresFullTextQueryService implements SearchQueryService {
             sql.append(") ");
         }
 
+        if (query.businessRole() != null) {
+            sql.append("AND EXISTS (SELECT 1 FROM company_skill_business_role br ");
+            sql.append("WHERE br.skill_id = s.id AND br.role_key = :businessRole) ");
+        }
+
         // Full-text search
         if (hasKeyword) {
             sql.append("AND (");
@@ -204,6 +209,10 @@ public class PostgresFullTextQueryService implements SearchQueryService {
             nativeQuery.setParameter("labelSlugs", query.labelSlugs());
         }
 
+        if (query.businessRole() != null) {
+            nativeQuery.setParameter("businessRole", query.businessRole());
+        }
+
         if (hasKeyword) {
             if (hasTsQuery) {
                 nativeQuery.setParameter("tsQuery", tsQuery);
@@ -246,6 +255,10 @@ public class PostgresFullTextQueryService implements SearchQueryService {
 
         if (query.labelSlugs() != null && !query.labelSlugs().isEmpty()) {
             countQuery.setParameter("labelSlugs", query.labelSlugs());
+        }
+
+        if (query.businessRole() != null) {
+            countQuery.setParameter("businessRole", query.businessRole());
         }
 
         if (hasKeyword) {

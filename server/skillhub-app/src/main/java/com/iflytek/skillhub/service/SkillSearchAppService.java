@@ -110,11 +110,16 @@ public class SkillSearchAppService {
             String userId,
             Map<Long, NamespaceRole> userNsRoles) {
 
+        return search(keyword, namespaceSlug, sortBy, page, size, labelSlugs, userId, userNsRoles, null);
+    }
+
+    public SearchResponse search(String keyword, String namespaceSlug, String sortBy, int page, int size,
+            List<String> labelSlugs, String userId, Map<Long, NamespaceRole> userNsRoles, String businessRole) {
         Long namespaceId = resolveNamespaceId(namespaceSlug, userId, userNsRoles);
 
         SearchVisibilityScope scope = buildVisibilityScope(userId, userNsRoles);
 
-        return searchVisibleSkills(keyword, namespaceId, sortBy != null ? sortBy : "newest", page, size, labelSlugs, scope, false);
+        return searchVisibleSkills(keyword, namespaceId, sortBy != null ? sortBy : "newest", page, size, labelSlugs, scope, false, com.iflytek.skillhub.domain.shared.BusinessRoles.filter(businessRole));
     }
 
     public SearchResponse searchInstallableLatest(
@@ -127,7 +132,7 @@ public class SkillSearchAppService {
             Map<Long, NamespaceRole> userNsRoles) {
         Long namespaceId = resolveNamespaceId(namespaceSlug, userId, userNsRoles);
         SearchVisibilityScope scope = buildVisibilityScope(userId, userNsRoles);
-        return searchVisibleSkills(keyword, namespaceId, sortBy != null ? sortBy : "newest", page, size, List.of(), scope, true);
+        return searchVisibleSkills(keyword, namespaceId, sortBy != null ? sortBy : "newest", page, size, List.of(), scope, true, null);
     }
 
     private Long resolveNamespaceId(String namespaceSlug, String userId, Map<Long, NamespaceRole> userNsRoles) {
@@ -176,7 +181,7 @@ public class SkillSearchAppService {
             int size,
             List<String> labelSlugs,
             SearchVisibilityScope scope,
-            boolean requireInstallableLatest) {
+            boolean requireInstallableLatest, String businessRole) {
         SearchResult result = searchQueryService.search(new SearchQuery(
                 keyword,
                 namespaceId,
@@ -185,7 +190,8 @@ public class SkillSearchAppService {
                 page,
                 size,
                 normalizeLabelSlugs(labelSlugs),
-                requireInstallableLatest
+                requireInstallableLatest,
+                businessRole
         ));
         List<SkillSummaryResponse> pageItems = mapVisibleSkillSummaries(result.skillIds(), scope.userId());
         return new SearchResponse(pageItems, result.total(), page, size);

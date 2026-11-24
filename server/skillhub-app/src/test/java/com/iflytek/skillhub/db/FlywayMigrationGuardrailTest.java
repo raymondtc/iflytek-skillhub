@@ -19,6 +19,10 @@ class FlywayMigrationGuardrailTest {
     private static final Pattern VERSIONED_MIGRATION_PATTERN =
             Pattern.compile("^V(?<version>\\d+)__(?<description>.+)\\.sql$");
 
+    // Company extensions do not consume upstream versions. Only this named repeatable stream is allowed.
+    private static final Pattern COMPANY_REPEATABLE_PATTERN =
+            Pattern.compile("^R__company_[a-z0-9_]+\\.sql$");
+
     @Test
     void versionedMigrations_mustUseUniqueVersions() throws IOException {
         Map<Integer, List<String>> versions = new LinkedHashMap<>();
@@ -62,10 +66,11 @@ class FlywayMigrationGuardrailTest {
     }
 
     @Test
-    void migrationFiles_mustMatchFlywayVersionedNaming() throws IOException {
+    void migrationFiles_mustMatchUpstreamVersionedOrCompanyRepeatableNaming() throws IOException {
         List<String> invalidFiles = migrationFiles().stream()
                 .map(path -> path.getFileName().toString())
-                .filter(name -> !VERSIONED_MIGRATION_PATTERN.matcher(name).matches())
+                .filter(name -> !VERSIONED_MIGRATION_PATTERN.matcher(name).matches()
+                        && !COMPANY_REPEATABLE_PATTERN.matcher(name).matches())
                 .sorted()
                 .toList();
 

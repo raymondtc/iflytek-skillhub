@@ -56,7 +56,8 @@ public class SkillSearchController extends BaseApiController {
             @Parameter(schema = @Schema(type = "integer", defaultValue = "20", minimum = "1"))
             @RequestParam(required = false) String size,
             @RequestAttribute(value = "userId", required = false) String userId,
-            @RequestAttribute(value = "userNsRoles", required = false) Map<Long, NamespaceRole> userNsRoles) {
+            @RequestAttribute(value = "userNsRoles", required = false) Map<Long, NamespaceRole> userNsRoles,
+            @RequestParam(required = false) String businessRole) {
 
         boolean includeLabels = IncludeOptions.includesLabels(include);
         SkillSearchAppService.SearchResponse response = skillSearchAppService.search(
@@ -67,7 +68,8 @@ public class SkillSearchController extends BaseApiController {
                 parsePositiveInt(size, DEFAULT_SIZE),
                 labels,
                 userId,
-                userNsRoles
+                userNsRoles,
+                businessRole
         );
 
         return ok("response.success.read", includeLabels ? withLabels(response) : response);

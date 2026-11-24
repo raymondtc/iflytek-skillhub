@@ -8,6 +8,7 @@ import { loginCommand } from './commands/login'
 import { logoutCommand } from './commands/logout'
 import { publishCommand, type PublishCommandOptions } from './commands/publish'
 import { removeCommand, type RemoveCommandOptions } from './commands/remove'
+import { businessRolesCommand, type BusinessRolesOptions } from './commands/business-roles'
 import { searchCommand } from './commands/search'
 import { suiteCommand, type SuiteCommandOptions } from './commands/suite'
 import { syncDiffCommand, syncPullCommand, syncPushCommand, syncStatusCommand, type SyncCommonOptions, type SyncPullOptions, type SyncPushOptions } from './commands/sync'
@@ -289,6 +290,17 @@ cli
       agent: toArray(options.agent)
     }), Boolean(options.json))
   })
+
+cli
+  .command('business-roles <action> <coordinate>', 'Read or replace business discovery roles')
+  .option('--type <type>', 'Resource type: skill or suite')
+  .option('--role <key>', 'Stable business role key (repeatable)')
+  .option('--clear', 'Clear all business roles')
+  .option('--registry <url>', 'Registry URL')
+  .option('--token <token>', 'API token')
+  .option('--json', 'Output JSON')
+  .action((action: string, coordinate: string, options: Omit<BusinessRolesOptions, 'role'> & { role?: string | string[] }) =>
+    runCommand(() => businessRolesCommand(action, coordinate, { ...options, role: toArray(options.role) }), Boolean(options.json)))
 
 cli
   .command('suite <action> <coordinate>', 'Manage Skill Suites on compatible registries')
