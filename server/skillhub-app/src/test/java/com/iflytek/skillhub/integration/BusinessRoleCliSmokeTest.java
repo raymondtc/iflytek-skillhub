@@ -30,7 +30,8 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 /** Opt-in smoke against the built Node artifact; regular backend CI does not require Node. */
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
+        properties = "server.address=127.0.0.1")
 @ActiveProfiles("test")
 @Import(TestRedisConfig.class)
 @Testcontainers
