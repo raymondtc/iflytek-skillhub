@@ -156,6 +156,22 @@ export class SkillHubClient {
     private readonly fetchImpl: typeof fetch = fetch
   ) {}
 
+  async businessRoles(resourceType: 'skills' | 'suites', namespace: string, slug: string,
+    roles?: string[]): Promise<{ businessRoles: string[] }> {
+    const path = `/api/v1/${resourceType}/${encodeURIComponent(namespace)}/${encodeURIComponent(slug)}/business-roles`
+    let response: Response
+    try {
+      response = await this.fetchImpl(`${this.registry}${path}`, {
+        method: roles === undefined ? 'GET' : 'PUT',
+        headers: { ...this.headers(), ...(roles === undefined ? {} : { 'Content-Type': 'application/json' }) },
+        ...(roles === undefined ? {} : { body: JSON.stringify({ businessRoles: roles }) })
+      })
+    } catch {
+      throw new CliError('registry unreachable', EXIT.network, { registry: this.registry })
+    }
+    return this.handleJsonResponse<{ businessRoles: string[] }>(response)
+  }
+
   async whoami(): Promise<WhoAmIResponse> {
     return this.getJson('/auth/whoami')
   }

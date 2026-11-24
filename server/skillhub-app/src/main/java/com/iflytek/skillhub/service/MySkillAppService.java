@@ -131,6 +131,16 @@ public class MySkillAppService {
         return new PageResponse<>(items, skills.getTotalElements(), skills.getNumber(), skills.getSize());
     }
 
+    public PageResponse<SkillSummaryResponse> listMyStars(String userId, int page, int size,
+            Map<Long, NamespaceRole> namespaceRoles, Set<String> platformRoles,
+            String keyword, String namespace, String businessRole, String sort) {
+        Page<Skill> skills = starredSkillQueryRepository.findAccessible(userId, namespaceRoles, platformRoles,
+                new com.iflytek.skillhub.repository.StarredSkillFilter(keyword, namespace, businessRole, sort),
+                PageRequest.of(Math.max(0, page), Math.min(Math.max(1, size), 100)));
+        return new PageResponse<>(mySkillQueryRepository.getSkillSummaries(skills.getContent(), userId),
+                skills.getTotalElements(), skills.getNumber(), skills.getSize());
+    }
+
     public PageResponse<SkillSummaryResponse> listMySubscriptions(String userId, int page, int size) {
         Page<com.iflytek.skillhub.domain.social.SkillSubscription> subPage = skillSubscriptionRepository.findByUserId(
                 userId,

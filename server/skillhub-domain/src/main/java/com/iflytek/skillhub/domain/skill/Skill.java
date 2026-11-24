@@ -9,6 +9,22 @@ import java.time.Instant;
 @Table(name = "skill")
 public class Skill {
 
+    @jakarta.persistence.ElementCollection
+    @jakarta.persistence.CollectionTable(name = "company_skill_business_role",
+            joinColumns = @jakarta.persistence.JoinColumn(name = "skill_id"))
+    @Column(name = "role_key", nullable = false, length = 64)
+    private java.util.Set<String> businessRoles = new java.util.HashSet<>();
+
+    public java.util.List<String> getBusinessRoles() {
+        return businessRoles.stream().sorted().toList();
+    }
+
+    public void setBusinessRoles(java.util.Collection<String> roles) {
+        var normalized = com.iflytek.skillhub.domain.shared.BusinessRoles.normalize(roles);
+        businessRoles.clear();
+        businessRoles.addAll(normalized);
+    }
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

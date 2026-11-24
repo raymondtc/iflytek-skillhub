@@ -45,10 +45,11 @@ public class ResourceDiscoveryController extends BaseApiController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(name = "label", required = false) List<String> labels,
-            @RequestAttribute(value = "userNsRoles", required = false) Map<Long, NamespaceRole> roles
+            @RequestAttribute(value = "userNsRoles", required = false) Map<Long, NamespaceRole> roles,
+            @RequestParam(required = false) String businessRole
     ) {
         return ok("response.success.read", appService.search(
                 q, namespace, resourceType, sort, page, size,
-                roles == null ? java.util.Set.of() : roles.keySet(), labels));
+                roles == null ? java.util.Set.of() : roles.keySet(), labels, businessRole));
     }
 }

@@ -19,6 +19,19 @@ class RouteSecurityPolicyRegistryTest {
     private final RouteSecurityPolicyRegistry registry = new RouteSecurityPolicyRegistry();
 
     @Test
+    void businessRoleWritesRequireAuthenticationAndPublishScopeForBothResources() {
+        for (String prefix : List.of("/api/v1", "/api/web")) {
+            for (String type : List.of("skills", "suites")) {
+                String path = prefix + "/" + type + "/team/demo/business-roles";
+                assertEquals(RouteSecurityPolicyRegistry.AccessLevel.PERMIT_ALL, registry.accessLevel("GET", path));
+                assertEquals(RouteSecurityPolicyRegistry.AccessLevel.AUTHENTICATED, registry.accessLevel("PUT", path));
+                assertFalse(registry.authorizeApiToken("PUT", path, Set.of("skill:read")).allowed());
+                assertTrue(registry.authorizeApiToken("PUT", path, Set.of("skill:publish")).allowed());
+            }
+        }
+    }
+
+    @Test
     void visibilityWritesRequirePublishScopeAndAuthenticatedReads() {
         for (String prefix : List.of("/api/v1", "/api/web")) {
             String route = prefix + "/skills/team/foo/visibility";

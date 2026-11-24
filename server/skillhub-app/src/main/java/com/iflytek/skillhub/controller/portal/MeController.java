@@ -55,12 +55,19 @@ public class MeController extends BaseApiController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "12") int size,
             @AuthenticationPrincipal PlatformPrincipal principal,
-            @RequestAttribute(value = "userNsRoles", required = false) Map<Long, NamespaceRole> namespaceRoles) {
+            @RequestAttribute(value = "userNsRoles", required = false) Map<Long, NamespaceRole> namespaceRoles,
+            @RequestParam(required = false) String q,
+            @RequestParam(required = false) String namespace,
+            @RequestParam(required = false) String businessRole,
+            @RequestParam(required = false) String sort) {
         if (principal == null) {
             throw new UnauthorizedException("error.auth.required");
         }
 
-        return ok("response.success.read", mySkillAppService.listMyStars(principal.userId(), page, size, namespaceRoles, principal.platformRoles()));
+        return ok("response.success.read", q == null && namespace == null && businessRole == null && sort == null
+                ? mySkillAppService.listMyStars(principal.userId(), page, size, namespaceRoles, principal.platformRoles())
+                : mySkillAppService.listMyStars(principal.userId(), page, size, namespaceRoles, principal.platformRoles(),
+                        q, namespace, businessRole, sort));
     }
 
     @GetMapping("/subscriptions")

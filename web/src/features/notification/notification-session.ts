@@ -7,6 +7,7 @@ export function getNotificationQueryKeyScope(userId?: string | null) {
 export function clearSessionScopedQueries(queryClient: QueryClient) {
   queryClient.removeQueries({ queryKey: ['notifications'] })
   queryClient.removeQueries({ queryKey: ['labels'] })
+  queryClient.removeQueries({ queryKey: ['business-roles'] })
   queryClient.removeQueries({ queryKey: ['skills', 'my'] })
   queryClient.removeQueries({ queryKey: ['skills', 'stars'] })
   queryClient.removeQueries({ queryKey: ['namespaces', 'my'] })

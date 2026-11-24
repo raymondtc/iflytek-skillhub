@@ -114,6 +114,14 @@ public class PostgresResourceDiscoveryQueryService implements ResourceDiscoveryQ
                        WHERE LOWER(label.slug) IN (:labelSlugs)
                    )
               ))
+              AND (:businessRole = '' OR (
+                   (resource_type = 'SKILL' AND EXISTS (
+                       SELECT 1 FROM company_skill_business_role br
+                       WHERE br.skill_id = resource_id AND br.role_key = :businessRole))
+                   OR (resource_type = 'SUITE' AND EXISTS (
+                       SELECT 1 FROM company_skill_suite_business_role br
+                       WHERE br.suite_id = resource_id AND br.role_key = :businessRole))
+              ))
               AND (:query = ''
                    OR LOWER(slug) LIKE :queryPattern
                    OR LOWER(display_name) LIKE :queryPattern
@@ -172,7 +180,8 @@ public class PostgresResourceDiscoveryQueryService implements ResourceDiscoveryQ
     ) {
         Set<Long> memberNamespaceIds = input.memberNamespaceIds();
         List<String> labelSlugs = input.labelSlugs() == null ? List.of() : input.labelSlugs();
-        query.setParameter("query", keyword)
+        query.setParameter("businessRole", input.businessRole() == null ? "" : input.businessRole())
+                .setParameter("query", keyword)
                 .setParameter("queryPattern", "%" + keyword + "%")
                 .setParameter("namespace", namespace)
                 .setParameter("resourceType", resourceType)

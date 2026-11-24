@@ -221,3 +221,5 @@ describe('SuiteDetailPage', () => {
     expect(screen.queryByRole('button', { name: 'suite.copyInstallCommand' })).toBeNull()
   })
 })
+
+vi.mock('@/features/business-role/business-role-panel', () => ({ BusinessRolePanel: () => null }))

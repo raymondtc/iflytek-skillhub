@@ -17,8 +17,14 @@ public interface ResourceDiscoveryQueryService {
             int page,
             int size,
             Set<Long> memberNamespaceIds,
-            List<String> labelSlugs
-    ) {}
+            List<String> labelSlugs,
+            String businessRole
+    ) {
+        public ResourceQuery(String keyword, String namespace, String resourceType, String sort,
+                int page, int size, Set<Long> memberNamespaceIds, List<String> labelSlugs) {
+            this(keyword, namespace, resourceType, sort, page, size, memberNamespaceIds, labelSlugs, null);
+        }
+    }
 
     record ResourceHit(
             String resourceType,

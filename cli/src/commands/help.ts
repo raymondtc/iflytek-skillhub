@@ -49,6 +49,12 @@ export const commands = {
       'skillhub install pdf-parser --scope project --agent codex'
     ]
   },
+  'business-roles': {
+    summary: 'Read or replace Skill/Suite business role keys',
+    usage: 'skillhub business-roles <get|set> <coordinate> --type <skill|suite> [--role <key> | --clear]',
+    examples: ['skillhub business-roles set @global/example --type skill --role sales --role support',
+      'skillhub business-roles set @global/example --type suite --clear']
+  },
   suite: {
     summary: 'Manage Skill Suites on compatible registries',
     usage: 'skillhub suite <install|check|upgrade|remove> <coordinate> [options]',

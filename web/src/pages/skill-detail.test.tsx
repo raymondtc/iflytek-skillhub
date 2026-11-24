@@ -1040,3 +1040,5 @@ describe('SkillDetailPage', () => {
     expect(toastMocks.error).not.toHaveBeenCalled()
   })
 })
+
+vi.mock('@/features/business-role/business-role-panel', () => ({ BusinessRolePanel: () => null }))
