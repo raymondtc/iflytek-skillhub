@@ -1,0 +1,72 @@
+name: Company SkillHub Images
+
+on:
+  push:
+    branches: ['company/v0.2.23']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: company-images-${{ github.sha }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    if: github.repository == 'raymondtc/iflytek-skillhub'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      fail-fast: false
+      matrix:
+        component: [server, web]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Immutable image coordinates
+        id: image
+        shell: bash
+        run: |
+          echo "name=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/skillhub-${{ matrix.component }}" >> "$GITHUB_OUTPUT"
+          echo "tag=v0.2.23-company-${GITHUB_SHA:0:12}" >> "$GITHUB_OUTPUT"
+      - name: Build and publish
+        id: build
+        uses: docker/build-push-action@v6
+        with:
+          context: ./${{ matrix.component }}
+          file: ./${{ matrix.component }}/Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: |
+            ${{ steps.image.outputs.name }}:${{ steps.image.outputs.tag }}
+            ${{ steps.image.outputs.name }}:sha-${{ github.sha }}
+          labels: |
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.version=${{ steps.image.outputs.tag }}
+            io.skillhub.upstream.version=v0.2.23
+          cache-from: type=gha,scope=company-v023-${{ matrix.component }}
+          cache-to: type=gha,mode=max,scope=company-v023-${{ matrix.component }}
+      - name: Record digest
+        env:
+          IMAGE: ${{ steps.image.outputs.name }}
+          TAG: ${{ steps.image.outputs.tag }}
+          DIGEST: ${{ steps.build.outputs.digest }}
+        run: |
+          printf '%s:%s\n%s@%s\n' "$IMAGE" "$TAG" "$IMAGE" "$DIGEST" > image.txt
+          cat image.txt >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: company-image-${{ matrix.component }}
+          path: image.txt

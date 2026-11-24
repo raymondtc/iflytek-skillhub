@@ -27,12 +27,25 @@ public class JpaStarredSkillQueryRepository implements StarredSkillQueryReposito
     @Override
     public Page<Skill> findAccessible(String userId, Map<Long, NamespaceRole> namespaceRoles,
                                       Set<String> platformRoles, Pageable pageable) {
+        return findAccessible(userId, namespaceRoles, platformRoles, StarredSkillFilter.none(), pageable);
+    }
+
+    @Override
+    public Page<Skill> findAccessible(String userId, Map<Long, NamespaceRole> namespaceRoles,
+                                      Set<String> platformRoles, StarredSkillFilter filter, Pageable pageable) {
         var builder = entityManager.getCriteriaBuilder();
         var query = builder.createQuery(Skill.class);
         var skill = query.from(Skill.class);
         var star = query.from(SkillStar.class);
-        query.select(skill).where(predicate(builder, skill, star, userId, namespaceRoles, platformRoles))
-                .orderBy(builder.desc(star.get("createdAt")), builder.desc(star.get("id")));
+        query.select(skill).where(builder.and(predicate(builder, skill, star, userId, namespaceRoles, platformRoles),
+                filters(builder, query, skill, filter)));
+        if ("downloads".equals(filter.sort())) {
+            query.orderBy(builder.desc(skill.get("downloadCount")), builder.desc(skill.get("updatedAt")), builder.desc(skill.get("id")));
+        } else if (!filter.sort().isEmpty()) {
+            query.orderBy(builder.desc(skill.get("updatedAt")), builder.desc(skill.get("id")));
+        } else {
+            query.orderBy(builder.desc(star.get("createdAt")), builder.desc(star.get("id")));
+        }
         var result = entityManager.createQuery(query)
                 .setFirstResult(Math.toIntExact(pageable.getOffset()))
                 .setMaxResults(pageable.getPageSize()).getResultList();
@@ -41,8 +54,30 @@ public class JpaStarredSkillQueryRepository implements StarredSkillQueryReposito
         var countSkill = countQuery.from(Skill.class);
         var countStar = countQuery.from(SkillStar.class);
         countQuery.select(builder.count(countSkill))
-                .where(predicate(builder, countSkill, countStar, userId, namespaceRoles, platformRoles));
+                .where(builder.and(predicate(builder, countSkill, countStar, userId, namespaceRoles, platformRoles),
+                        filters(builder, countQuery, countSkill, filter)));
         return new PageImpl<>(result, pageable, entityManager.createQuery(countQuery).getSingleResult());
+    }
+
+    private Predicate filters(CriteriaBuilder builder, jakarta.persistence.criteria.CriteriaQuery<?> query,
+                              Root<Skill> skill, StarredSkillFilter filter) {
+        var conditions = new java.util.ArrayList<Predicate>();
+        if (filter.businessRole() != null) {
+            conditions.add(builder.isMember(filter.businessRole(), skill.get("businessRoles")));
+        }
+        if (!filter.keyword().isEmpty() || !filter.namespace().isEmpty()) {
+            var ns = query.from(com.iflytek.skillhub.domain.namespace.Namespace.class);
+            conditions.add(builder.equal(ns.get("id"), skill.get("namespaceId")));
+            if (!filter.namespace().isEmpty()) conditions.add(builder.equal(ns.get("slug"), filter.namespace()));
+            if (!filter.keyword().isEmpty()) {
+                String like = "%" + filter.keyword().replace("!", "!!").replace("%", "!%").replace("_", "!_") + "%";
+                conditions.add(builder.or(builder.like(builder.lower(skill.get("slug")), like, '!'),
+                        builder.like(builder.lower(skill.get("displayName")), like, '!'),
+                        builder.like(builder.lower(skill.get("summary")), like, '!'),
+                        builder.like(builder.lower(ns.get("slug")), like, '!')));
+            }
+        }
+        return builder.and(conditions.toArray(Predicate[]::new));
     }
 
     private Predicate predicate(CriteriaBuilder builder, Root<Skill> skill, Root<SkillStar> star,

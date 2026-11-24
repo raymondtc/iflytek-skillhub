@@ -1426,10 +1426,13 @@ export const meApi = {
     return fetchJson<{ items: SkillSummary[]; total: number; page: number; size: number }>(`${WEB_API_PREFIX}/me/skills?${searchParams.toString()}`)
   },
 
-  async getStarsPage(params?: { page?: number; size?: number }): Promise<{ items: SkillSummary[]; total: number; page: number; size: number }> {
+  async getStarsPage(params?: { page?: number; size?: number; q?: string; namespace?: string; businessRole?: string; sort?: string }): Promise<{ items: SkillSummary[]; total: number; page: number; size: number }> {
     const searchParams = new URLSearchParams()
     searchParams.set('page', String(params?.page ?? 0))
     searchParams.set('size', String(params?.size ?? 12))
+    for (const key of ['q', 'namespace', 'businessRole', 'sort'] as const) {
+      if (params?.[key]) searchParams.set(key, params[key])
+    }
     return fetchJson<{ items: SkillSummary[]; total: number; page: number; size: number }>(`${WEB_API_PREFIX}/me/stars?${searchParams.toString()}`)
   },
 

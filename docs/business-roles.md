@@ -21,11 +21,15 @@ GET /api/v1/suites/{namespace}/{slug}/business-roles
 PUT /api/v1/suites/{namespace}/{slug}/business-roles
 ```
 
-The same routes exist under `/api/web`. Request and response `data` have the shape:
+The same routes exist under `/api/web`. The replacement request has the shape:
 
 ```json
 {"businessRoles": ["customer-support", "sales"]}
 ```
+
+GET and PUT response `data` also include `canManageBusinessRoles`, computed from the same
+server policy that authorizes writes. Clients use it for the edit affordance; it is not accepted
+as an authorization input.
 
 PUT replaces the complete set atomically. GET returns current container metadata, including for
 older versions, rather than a version snapshot. Reads apply existing source/detail visibility.
@@ -120,3 +124,34 @@ To exercise the built CLI against an isolated real HTTP server and PostgreSQL, f
 
 This opt-in test requires Node and Docker, creates only disposable test data and tokens, and
 uses a random loopback server port. Backend CI does not require Node for ordinary tests.
+
+## Web UI
+
+Skill search and the Suite catalog expose a searchable single-key role filter. Filters and page
+are URL state; changing a role resets the page. Valid unknown keys return empty results and can
+be cleared. Role chips on details navigate to the matching typed discovery page.
+
+Skill detail and Suite management contain a shared editor: add/remove multiple keys, clear the
+local draft, cancel without writing, or save the complete set. Errors retain the draft; edit
+capabilities and caches are scoped to the authenticated identity. Suite market detail is read-only.
+
+`GET /api/v1/business-roles` (also `/api/web`) returns up to 100 sorted distinct keys from
+currently discoverable resources, with optional `resourceType`, `namespace`, and literal prefix
+`q`. No private or otherwise undiscoverable resource contributes candidates. Unknown keys can
+still be entered manually. This is a read-only facet, not a role directory or a management API.
+
+Favorites retain their existing object-visibility policy, including accessible private resources.
+`/api/web/me/stars` additionally accepts `businessRole`, `q`, `namespace`, and `sort`; filtering,
+counting and pagination now occur together in the database. Public marketplace ACLs are unchanged.
+
+The real browser regression is `web/e2e/business-roles.spec.ts`. It requires a loopback test server,
+real PostgreSQL/Redis and local package storage, with a disposable PostgreSQL container labeled
+`skillhub-task=business-role-ui`. It publishes real private packages, clones their fixture graph for
+pagination and seeds public visibility only in that isolated database. It does not change the public
+scanner policy or upload rate limits. All role reads,
+writes, discovery, login and permission checks use real HTTP. Set
+`SKILLHUB_ROLE_E2E_PG_CONTAINER` to opt in and optionally `SKILLHUB_ROLE_E2E_SCREENSHOTS` to save
+local screenshots. Cleanup addresses only the test's exact resource IDs.
+
+The development-only `SKILLHUB_DEV_API_PROXY_TARGET` lets an isolated Vite process proxy to a
+non-default backend port; its default remains localhost:8080.

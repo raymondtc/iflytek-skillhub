@@ -1,3 +1,4 @@
+import { BusinessRolePanel } from '@/features/business-role/business-role-panel'
 import { startTransition, useCallback, useEffect, useRef, useState, type MouseEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, useParams, useNavigate, useRouterState, useSearch } from '@tanstack/react-router'
@@ -1448,6 +1449,8 @@ export function SkillDetailPage() {
             canRetry
           />
         )}
+
+        <BusinessRolePanel type="skills" namespace={namespace} slug={slug} />
 
         <SkillLabelPanel
           namespace={namespace}

@@ -10,7 +10,7 @@ async function getMyStars(): Promise<SkillSummary[]> {
   return meApi.getStars()
 }
 
-async function getMyStarsPage(params: { page?: number; size?: number } = {}): Promise<PagedResponse<SkillSummary>> {
+async function getMyStarsPage(params: { page?: number; size?: number; q?: string; namespace?: string; businessRole?: string; sort?: string } = {}): Promise<PagedResponse<SkillSummary>> {
   return meApi.getStarsPage(params)
 }
 
@@ -47,7 +47,7 @@ export function useMyStars(enabled = true) {
   })
 }
 
-export function useMyStarsPage(params: { page?: number; size?: number } = {}, enabled = true) {
+export function useMyStarsPage(params: { page?: number; size?: number; q?: string; namespace?: string; businessRole?: string; sort?: string } = {}, enabled = true) {
   return useQuery({
     queryKey: ['skills', 'stars', 'page', params],
     queryFn: () => getMyStarsPage(params),

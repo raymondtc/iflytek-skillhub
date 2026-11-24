@@ -8,7 +8,14 @@ const mocks = vi.hoisted(() => ({
   search: vi.fn((_params?: unknown) => ({ data: { items: [], total: 0, page: 0, size: 12 }, isLoading: false })),
 }))
 
-vi.mock('@tanstack/react-router', () => ({ useNavigate: () => vi.fn() }))
+vi.mock('@tanstack/react-router', async () => {
+  const { useState } = await import('react')
+  let updateSearch: (value: Record<string, unknown>) => void
+  return {
+    useSearch: () => { const [search, setSearch] = useState({ page: 0 }); updateSearch = setSearch as typeof updateSearch; return search },
+    useNavigate: () => ({ search }: { search: Record<string, unknown> }) => updateSearch(search),
+  }
+})
 vi.mock('react-i18next', () => ({ useTranslation: () => ({ t: (key: string) => key }) }))
 vi.mock('@/shared/hooks/use-suite-queries', () => ({
   useResourceSearch: (params: unknown) => mocks.search(params),
@@ -54,3 +61,5 @@ describe('SuitesPage', () => {
     expect(mocks.search).toHaveBeenLastCalledWith(expect.objectContaining({ q: undefined, page: 0 }))
   })
 })
+
+vi.mock('@/features/business-role/business-role-filter', () => ({ BusinessRoleFilter: () => null }))

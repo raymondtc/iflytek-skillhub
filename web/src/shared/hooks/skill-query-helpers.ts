@@ -15,6 +15,8 @@ export function buildSkillSearchUrl(params: SearchParams) {
     queryParams.append('namespace', cleanNamespace)
   }
 
+  if (params.businessRole) queryParams.set('businessRole', params.businessRole)
+
   if (params.label) {
     queryParams.append('label', params.label)
   }

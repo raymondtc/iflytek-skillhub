@@ -135,3 +135,5 @@ describe('SuiteManagementPage', () => {
     expect(screen.getByText('suite.memberInformation')).not.toBeNull()
   })
 })
+
+vi.mock('@/features/business-role/business-role-panel', () => ({ BusinessRolePanel: () => null }))

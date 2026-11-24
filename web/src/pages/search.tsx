@@ -2,7 +2,6 @@ import { startTransition, useEffect, useRef, useState } from 'react'
 import { useNavigate, useSearch } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import { Loader2 } from 'lucide-react'
-import type { SkillSummary } from '@/api/types'
 import { useAuth } from '@/features/auth/use-auth'
 import { SearchBar } from '@/features/search/search-bar'
 import { SkillCard } from '@/features/skill/skill-card'
@@ -11,7 +10,8 @@ import { EmptyState } from '@/shared/components/empty-state'
 import { Pagination } from '@/shared/components/pagination'
 import { useSearchSkills } from '@/shared/hooks/use-skill-queries'
 import { useVisibleLabels } from '@/shared/hooks/use-label-queries'
-import { useMyStars } from '@/shared/hooks/use-user-queries'
+import { useMyStarsPage } from '@/shared/hooks/use-user-queries'
+import { BusinessRoleFilter } from '@/features/business-role/business-role-filter'
 import { toRouterPath } from '@/shared/lib/base-path'
 import { formatNamespaceSearchInput, normalizeSearchQuery, parseNamespaceSearchInput } from '@/shared/lib/search-query'
 import { Button } from '@/shared/ui/button'
@@ -56,35 +56,6 @@ function scrollToTopOnPageChange() {
  * Search text, sorting, pagination, and the starred-only filter are mirrored into router search
  * params so the page can be shared, restored, and revisited without losing state.
  */
-function filterStarredSkills(skills: SkillSummary[], query: string, namespace: string): SkillSummary[] {
-  const normalizedQuery = query.trim().toLowerCase()
-  const normalizedNamespace = namespace.trim().toLowerCase()
-
-  return skills.filter((skill) => {
-    const matchesNamespace = !normalizedNamespace || skill.namespace.toLowerCase() === normalizedNamespace
-    if (!matchesNamespace) {
-      return false
-    }
-    if (!normalizedQuery) {
-      return true
-    }
-    return [skill.displayName, skill.summary, skill.namespace, skill.slug]
-        .filter(Boolean)
-        .some((value) => value!.toLowerCase().includes(normalizedQuery))
-  })
-}
-
-function sortStarredSkills(skills: SkillSummary[], sort: string): SkillSummary[] {
-  const sorted = [...skills]
-  if (sort === 'downloads') {
-    return sorted.sort((left, right) => right.downloadCount - left.downloadCount)
-  }
-  if (sort === 'newest' || sort === 'relevance') {
-    return sorted.sort((left, right) => new Date(right.updatedAt).getTime() - new Date(left.updatedAt).getTime())
-  }
-  return sorted
-}
-
 export function SearchPage() {
   const { t } = useTranslation()
   const navigate = useNavigate()
@@ -94,6 +65,7 @@ export function SearchPage() {
   const q = normalizeSearchQuery(searchParams.q || '')
   const namespace = (searchParams.namespace || '').replace(/^@/, '')
   const selectedLabel = searchParams.label || ''
+  const businessRole = searchParams.businessRole || ''
   const sort = searchParams.sort || 'newest'
   const page = searchParams.page ?? 0
   const starredOnly = searchParams.starredOnly ?? false
@@ -118,45 +90,44 @@ export function SearchPage() {
     previousPageRef.current = page
   }, [page])
 
-  const { data, isLoading, isFetching } = useSearchSkills({
+  const skillsQuery = useSearchSkills({
     q,
     namespace: namespace || undefined,
     label: selectedLabel || undefined,
+    businessRole: businessRole || undefined,
     sort,
     page,
     size: PAGE_SIZE,
     starredOnly,
   }, !starredOnly)
   const { data: labels } = useVisibleLabels()
-  const {
-    data: starredSkills,
-    isLoading: isLoadingStarred,
-    isFetching: isFetchingStarred,
-  } = useMyStars(starredOnly && isAuthenticated)
+  const starsQuery = useMyStarsPage({ q, namespace: namespace || undefined, businessRole: businessRole || undefined,
+    sort, page, size: PAGE_SIZE }, starredOnly && isAuthenticated)
+  const { data, isLoading, isFetching, isError, refetch } = starredOnly ? starsQuery : skillsQuery
   const handleSearch = (query: string) => {
     const parsedInput = parseNamespaceSearchInput(query)
     setQueryInput(query)
     startTransition(() => {
-      navigate({ to: '/search', search: { q: parsedInput.query, namespace: parsedInput.namespace, label: selectedLabel, sort, page: 0, starredOnly }, replace: true })
+      navigate({ to: '/search', search: { q: parsedInput.query, namespace: parsedInput.namespace, label: selectedLabel, businessRole, sort, page: 0, starredOnly }, replace: true })
     })
   }
 
   const handleSortChange = (newSort: string) => {
-    navigate({ to: '/search', search: { q, namespace, label: selectedLabel, sort: newSort, page: 0, starredOnly } })
+    navigate({ to: '/search', search: { q, namespace, label: selectedLabel, businessRole, sort: newSort, page: 0, starredOnly } })
   }
 
   const handlePageChange = (newPage: number) => {
     blurActiveElement()
-    navigate({ to: '/search', search: { q, namespace, label: selectedLabel, sort, page: newPage, starredOnly } })
+    navigate({ to: '/search', search: { q, namespace, label: selectedLabel, businessRole, sort, page: newPage, starredOnly } })
   }
 
   const handleLabelToggle = (label: string) => {
     const nextLabel = selectedLabel === label ? '' : label
-    navigate({ to: '/search', search: { q, namespace, label: nextLabel, sort, page: 0, starredOnly } })
+    navigate({ to: '/search', search: { q, namespace, label: nextLabel, businessRole, sort, page: 0, starredOnly } })
   }
 
   const handleNamespaceClear = () => {
-    navigate({ to: '/search', search: { q, namespace: '', label: selectedLabel, sort, page: 0, starredOnly } })
+    navigate({ to: '/search', search: { q, namespace: '', label: selectedLabel, businessRole, sort, page: 0, starredOnly } })
   }
 
   const handleStarredToggle = () => {
@@ -170,7 +141,7 @@ export function SearchPage() {
       return
     }
 
-    navigate({ to: '/search', search: { q, namespace, label: selectedLabel, sort, page: 0, starredOnly: !starredOnly } })
+    navigate({ to: '/search', search: { q, namespace, label: selectedLabel, businessRole, sort, page: 0, starredOnly: !starredOnly } })
   }
 
   const handleSkillClick = (namespace: string, slug: string) => {
@@ -180,27 +151,11 @@ export function SearchPage() {
     })
   }
 
-  const filteredStarredSkills = starredOnly
-    ? sortStarredSkills(filterStarredSkills(starredSkills ?? [], q, namespace), sort)
-    : []
-  const starredPageItems = starredOnly
-    ? filteredStarredSkills.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)
-    : []
-  const totalPages = starredOnly
-    ? Math.ceil(filteredStarredSkills.length / PAGE_SIZE)
-    : data
-      ? Math.ceil(data.total / data.size)
-      : 0
-  const displayItems = starredOnly
-    ? starredPageItems
-    : (data?.items ?? [])
-  const isPageLoading = starredOnly ? isLoadingStarred : isLoading
-  const isUpdatingResults = starredOnly
-    ? isFetchingStarred && !isLoadingStarred
-    : isFetching && !isLoading
-  const resultCount = starredOnly
-    ? filteredStarredSkills.length
-    : (data?.total ?? 0)
+  const totalPages = data ? Math.ceil(data.total / data.size) : 0
+  const displayItems = data?.items ?? []
+  const isPageLoading = isLoading
+  const isUpdatingResults = isFetching && !isLoading
+  const resultCount = data?.total ?? 0
 
   return (
     <div className={APP_SHELL_PAGE_CLASS_NAME}>
@@ -214,6 +169,10 @@ export function SearchPage() {
         />
       </div>
 
+      <BusinessRoleFilter type="skills" namespace={namespace} value={businessRole} onChange={role => {
+        navigate({ to: '/search', search: { q, namespace, label: selectedLabel, businessRole: role || undefined,
+          sort, page: 0, starredOnly } })
+      }} />
       {/* Sort And Filters */}
       <div className="space-y-4">
         <div className="flex items-center justify-between flex-wrap gap-4">
@@ -290,7 +249,9 @@ export function SearchPage() {
       </div>
 
       {/* Results */}
-      {isPageLoading ? (
+      {isError ? <div role="alert" className="space-y-3 text-sm text-destructive">
+        <p>{t('businessRoles.searchFailed')}</p><Button variant="outline" onClick={() => void refetch()}>{t('businessRoles.retry')}</Button>
+      </div> : isPageLoading ? (
         <SkeletonList count={PAGE_SIZE} />
       ) : displayItems.length > 0 ? (
         <>

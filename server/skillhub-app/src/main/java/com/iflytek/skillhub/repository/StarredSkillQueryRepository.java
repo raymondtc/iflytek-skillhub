@@ -10,5 +10,8 @@ import org.springframework.data.domain.Pageable;
 /** Starred skills filtered by current object access before counting and paging. */
 public interface StarredSkillQueryRepository {
     Page<Skill> findAccessible(String userId, Map<Long, NamespaceRole> namespaceRoles,
+                               Set<String> platformRoles, StarredSkillFilter filter, Pageable pageable);
+
+    Page<Skill> findAccessible(String userId, Map<Long, NamespaceRole> namespaceRoles,
                                Set<String> platformRoles, Pageable pageable);
 }
