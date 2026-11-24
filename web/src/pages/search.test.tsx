@@ -106,8 +106,8 @@ vi.mock('@/shared/hooks/use-label-queries', () => ({
 }))
 
 vi.mock('@/shared/hooks/use-user-queries', () => ({
-  useMyStars: () => ({
-    data: [],
+  useMyStarsPage: () => ({
+    data: { items: [], total: 0, page: 0, size: 12 },
     isLoading: false,
     isFetching: false,
   }),
@@ -184,6 +184,7 @@ describe('SearchPage', () => {
         label: '',
         sort: 'downloads',
         page: 0,
+        businessRole: '',
         starredOnly: false,
       },
     })
@@ -202,6 +203,7 @@ describe('SearchPage', () => {
         label: 'code-generation',
         sort: 'newest',
         page: 0,
+        businessRole: '',
         starredOnly: false,
       },
     })
@@ -221,6 +223,7 @@ describe('SearchPage', () => {
         label: 'code-generation',
         sort: 'downloads',
         page: 2,
+        businessRole: '',
         starredOnly: false,
       },
     })
@@ -232,6 +235,7 @@ describe('SearchPage', () => {
         label: 'code-generation',
         sort: 'downloads',
         page: 0,
+        businessRole: '',
         starredOnly: true,
       },
     })
@@ -263,6 +267,7 @@ describe('SearchPage', () => {
         label: 'code-generation',
         sort: 'downloads',
         page: 0,
+        businessRole: '',
         starredOnly: false,
       },
       replace: true,
@@ -337,3 +342,5 @@ describe('SearchPage', () => {
     expect(html).not.toContain('suite.resourceTypeSuite')
   })
 })
+
+vi.mock('@/features/business-role/business-role-filter', () => ({ BusinessRoleFilter: () => null }))

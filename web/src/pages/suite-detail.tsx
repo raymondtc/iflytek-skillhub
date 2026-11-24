@@ -1,3 +1,4 @@
+import { BusinessRolePanel } from '@/features/business-role/business-role-panel'
 import { useMemo } from 'react'
 import { AlertTriangle, Boxes, CheckCircle2, Copy, Download } from 'lucide-react'
 import { useNavigate, useParams, useSearch } from '@tanstack/react-router'
@@ -164,6 +165,7 @@ export function SuiteDetailPage() {
               )}
             </article>
             <aside className="space-y-5 border-l border-border/70 pl-5" aria-label={t('suite.overviewSupport')}>
+              <BusinessRolePanel type="suites" namespace={namespace} slug={slug} readOnly />
               {entryMember ? (
                 <section>
                   <h2 className="text-sm font-semibold">{t('suite.startWithEntry')}</h2>

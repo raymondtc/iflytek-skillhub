@@ -59,13 +59,13 @@ public class BusinessRoleAppService {
             if (!canManage(skill, userId, roles, platformRoles)) {
                 skillQuery.getSkillDetail(namespace, slug, userId, roles, platformRoles);
             }
-            return new BusinessRolesResponse(skill.getBusinessRoles());
+            return new BusinessRolesResponse(skill.getBusinessRoles(), canManage(skill, userId, roles, platformRoles));
         }
         SkillSuite suite = suite(nsId, slug);
         if (!canManage(suite, userId, roles, platformRoles)) {
             suiteQuery.getDetail(namespace, slug, null, userId, roles, platformRoles);
         }
-        return new BusinessRolesResponse(suite.getBusinessRoles());
+        return new BusinessRolesResponse(suite.getBusinessRoles(), canManage(suite, userId, roles, platformRoles));
     }
 
     @Transactional
@@ -97,7 +97,7 @@ public class BusinessRoleAppService {
         audit.record(userId, "BUSINESS_ROLES_REPLACE", auditType, id, requestId.current(),
                 context == null ? null : context.clientIp(), context == null ? null : context.userAgent(),
                 AuditDetail.of("before", before, "businessRoles", normalized));
-        return new BusinessRolesResponse(normalized);
+        return new BusinessRolesResponse(normalized, true);
     }
 
     private Long namespaceId(String slug) {

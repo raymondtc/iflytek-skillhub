@@ -5253,6 +5253,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/business-roles": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Find role keys on currently discoverable resources */
+        get: operations["listVisibleBusinessRoles"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/web/business-roles": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Find role keys on currently discoverable resources */
+        get: operations["listVisibleBusinessRoles_1"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/web/authoring/runs/{runId}/findings": {
         parameters: {
             query?: never;
@@ -6167,6 +6201,7 @@ export interface components {
         };
         BusinessRolesResponse: {
             businessRoles?: string[];
+            canManageBusinessRoles?: boolean;
         };
         SkillSuiteCreateRequest: {
             namespace: string;
@@ -8737,6 +8772,15 @@ export interface components {
             page?: number;
             /** Format: int32 */
             size?: number;
+        };
+        ApiResponseListString: {
+            /** Format: int32 */
+            code?: number;
+            msg?: string;
+            data?: string[];
+            /** Format: date-time */
+            timestamp?: string;
+            requestId?: string;
         };
         ApiResponseListValidationFindingResponse: {
             /** Format: int32 */
@@ -18584,6 +18628,10 @@ export interface operations {
             query?: {
                 page?: number;
                 size?: number;
+                q?: string;
+                namespace?: string;
+                businessRole?: string;
+                sort?: string;
             };
             header?: never;
             path?: never;
@@ -18607,6 +18655,10 @@ export interface operations {
             query?: {
                 page?: number;
                 size?: number;
+                q?: string;
+                namespace?: string;
+                businessRole?: string;
+                sort?: string;
             };
             header?: never;
             path?: never;
@@ -18977,6 +19029,54 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["ApiResponsePageResponseGovernanceActivityItemResponse"];
+                };
+            };
+        };
+    };
+    listVisibleBusinessRoles: {
+        parameters: {
+            query?: {
+                resourceType?: string;
+                namespace?: string;
+                q?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseListString"];
+                };
+            };
+        };
+    };
+    listVisibleBusinessRoles_1: {
+        parameters: {
+            query?: {
+                resourceType?: string;
+                namespace?: string;
+                q?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseListString"];
                 };
             };
         };

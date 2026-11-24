@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { useNavigate } from '@tanstack/react-router'
+import { useEffect, useState } from 'react'
+import { useNavigate, useSearch } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import { Boxes } from 'lucide-react'
 import { ResourceCard } from '@/features/suite/resource-card'
@@ -10,6 +10,7 @@ import { Pagination } from '@/shared/components/pagination'
 import { SkeletonList } from '@/shared/components/skeleton-loader'
 import { Input } from '@/shared/ui/input'
 import { Button } from '@/shared/ui/button'
+import { BusinessRoleFilter } from '@/features/business-role/business-role-filter'
 import { APP_SHELL_PAGE_CLASS_NAME } from '@/app/page-shell-style'
 
 const PAGE_SIZE = 12
@@ -17,14 +18,19 @@ const PAGE_SIZE = 12
 export function SuitesPage() {
   const navigate = useNavigate()
   const { t } = useTranslation()
-  const [query, setQuery] = useState('')
-  const [queryInput, setQueryInput] = useState('')
-  const [selectedLabel, setSelectedLabel] = useState('')
-  const [page, setPage] = useState(0)
+  const search = useSearch({ from: '/suites' })
+  const query = search.q ?? ''
+  const selectedLabel = search.label ?? ''
+  const businessRole = search.businessRole ?? ''
+  const page = search.page ?? 0
+  const [queryInput, setQueryInput] = useState(query)
+  useEffect(() => setQueryInput(query), [query])
+  const update = (next: Partial<typeof search>) => navigate({ to: '/suites', search: { ...search, page: 0, ...next } })
   const { data: labels, isLoading: isLoadingLabels } = useVisibleLabels()
-  const { data, isLoading } = useResourceSearch({
+  const { data, isLoading, isError, refetch } = useResourceSearch({
     q: query.trim() || undefined,
     resourceType: 'SUITE',
+    businessRole: businessRole || undefined,
     labels: selectedLabel ? [selectedLabel] : undefined,
     sort: 'newest',
     page,
@@ -44,7 +50,7 @@ export function SuitesPage() {
         <Button onClick={() => navigate({ to: '/dashboard/suites/new' })}>{t('suite.create')}</Button>
       </div>
 
-      <form className="flex max-w-xl gap-2" onSubmit={event => { event.preventDefault(); setQuery(queryInput.trim()); setPage(0) }}>
+      <form className="flex max-w-xl gap-2" onSubmit={event => { event.preventDefault(); void update({ q: queryInput.trim() || undefined }) }}>
       <Input
         value={queryInput}
         placeholder={t('suite.searchPlaceholder')}
@@ -52,6 +58,8 @@ export function SuitesPage() {
       />
       <Button type="submit" variant="outline">{t('nav.search')}</Button>
       </form>
+
+      <BusinessRoleFilter type="suites" value={businessRole} onChange={role => { void update({ businessRole: role || undefined }) }} />
 
       <section className="space-y-2" aria-labelledby="suite-label-filter-title">
         <div id="suite-label-filter-title" className="text-sm font-medium text-foreground">
@@ -63,8 +71,7 @@ export function SuitesPage() {
             size="sm"
             variant={selectedLabel === '' ? 'default' : 'outline'}
             onClick={() => {
-              setSelectedLabel('')
-              setPage(0)
+              void update({ label: undefined })
             }}
           >
             {t('suite.allLabels')}
@@ -78,8 +85,7 @@ export function SuitesPage() {
               size="sm"
               variant={selectedLabel === label.slug ? 'default' : 'outline'}
               onClick={() => {
-                setSelectedLabel(current => current === label.slug ? '' : label.slug)
-                setPage(0)
+                void update({ label: selectedLabel === label.slug ? undefined : label.slug })
               }}
             >
               {label.displayName}
@@ -88,7 +94,9 @@ export function SuitesPage() {
         </div>
       </section>
 
-      {isLoading ? (
+      {isError ? <div role="alert" className="space-y-3 text-sm text-destructive">
+        <p>{t('businessRoles.searchFailed')}</p><Button variant="outline" onClick={() => void refetch()}>{t('businessRoles.retry')}</Button>
+      </div> : isLoading ? (
         <SkeletonList count={PAGE_SIZE} />
       ) : data?.items.length ? (
         <>
@@ -106,7 +114,7 @@ export function SuitesPage() {
           <Pagination
             page={page}
             totalPages={Math.max(1, Math.ceil(data.total / data.size))}
-            onPageChange={setPage}
+            onPageChange={page => { void update({ page }) }}
           />
         </>
       ) : (

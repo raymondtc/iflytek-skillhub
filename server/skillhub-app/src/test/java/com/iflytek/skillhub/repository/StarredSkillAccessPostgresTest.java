@@ -89,6 +89,26 @@ class StarredSkillAccessPostgresTest {
     }
 
     @Test
+    void roleKeywordAndNamespaceFiltersKeepFavoritesAclAndApplyBeforePaging() {
+        for (Skill skill : fixtures) skill.setBusinessRoles(List.of("support", "sales", "sales"));
+        em.flush();
+        StarredSkillFilter filter = new StarredSkillFilter("secret", "social-access", "sales", "newest");
+        var first = query.findAccessible("owner", Map.of(), Set.of(), filter, PageRequest.of(0, 1));
+        var next = query.findAccessible("owner", Map.of(), Set.of(), filter, PageRequest.of(1, 1));
+        // The owner without namespace membership cannot read the published NAMESPACE_ONLY fixture.
+        assertThat(first.getTotalElements()).isEqualTo(11);
+        assertThat(first.getContent()).hasSize(1);
+        assertThat(next.getContent().getFirst().getId()).isNotEqualTo(first.getContent().getFirst().getId());
+        assertThat(query.findAccessible("viewer", Map.of(), Set.of(), filter, PageRequest.of(0, 1)).getTotalElements()).isEqualTo(1);
+        assertThat(query.findAccessible("viewer", Map.of(namespaceId, NamespaceRole.MEMBER), Set.of(), filter,
+                PageRequest.of(0, 20)).getTotalElements()).isEqualTo(2);
+        assertThat(query.findAccessible("owner", Map.of(), Set.of(), new StarredSkillFilter(null, null, "sale", "newest"),
+                PageRequest.of(0, 20)).getTotalElements()).isZero();
+        assertThat(query.findAccessible("owner", Map.of(), Set.of(), new StarredSkillFilter(null, "missing", "sales", null),
+                PageRequest.of(0, 20)).getTotalElements()).isZero();
+    }
+
+    @Test
     void databasePolicyMatchesVisibilityCheckerForEveryLifecycleAndRole() {
         assertPolicy("viewer", Map.of(), Set.of());
         assertPolicy("owner", Map.of(), Set.of());

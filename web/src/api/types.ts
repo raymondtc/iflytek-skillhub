@@ -492,6 +492,7 @@ export interface SkillTag {
 
 // Search and pagination
 export interface SearchParams {
+  businessRole?: string
   q?: string
   namespace?: string
   label?: string
@@ -519,6 +520,7 @@ export type ResourceSummary = Omit<RequiredGenerated<GeneratedResourceSummary, '
 }
 
 export interface ResourceSearchParams {
+  businessRole?: string
   q?: string
   namespace?: string
   resourceType?: ResourceType

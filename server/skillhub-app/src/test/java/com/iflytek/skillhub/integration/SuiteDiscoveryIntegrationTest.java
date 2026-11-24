@@ -557,7 +557,15 @@ class SuiteDiscoveryIntegrationTest {
         for (SkillSuite suite : List.of(publicSuite, memberSuite, privateSuite)) {
             suite.setBusinessRoles(List.of("sales", "support", "sales"));
         }
+        privateSkill.setBusinessRoles(List.of("private-only", "sales", "support"));
+        memberSkill.setBusinessRoles(List.of("member-only", "sales", "support"));
         entityManager.flush();
+        var candidates = new com.iflytek.skillhub.repository.BusinessRoleCandidateQueryRepository(entityManager.getEntityManager());
+        assertThat(candidates.findVisible("", "role-team", "", Set.of())).containsExactly("sales", "support");
+        assertThat(candidates.findVisible("SKILL", "role-team", "", Set.of(ns.getId())))
+                .containsExactly("member-only", "sales", "support");
+        assertThat(candidates.findVisible("SUITE", "role-team", "sup", Set.of())).containsExactly("support");
+        assertThat(candidates.findVisible("SKILL", "missing", "", Set.of(ns.getId()))).isEmpty();
         entityManager.clear();
         assertThat(entityManager.find(Skill.class, oldSkill.getId()).getBusinessRoles()).isEmpty();
         assertThat(entityManager.find(Skill.class, publicSkill.getId()).getBusinessRoles())
