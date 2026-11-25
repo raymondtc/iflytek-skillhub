@@ -65,9 +65,9 @@ class BusinessRoleCliSmokeTest {
         });
         String token = tokens.createToken("cli-role-owner", "role-smoke", "[\"skill:read\",\"skill:publish\"]").rawToken();
         for (String type : List.of("skill", "suite")) {
-            assertThat(cli(token, "set", type, "--role", "support", "--role", "sales", "--role", "sales"))
-                    .containsExactly("sales", "support");
-            assertThat(cli(token, "get", type)).containsExactly("sales", "support");
+            assertThat(cli(token, "set", type, "--role", "ExampleTeam-delivery", "--role", "ExampleTeam-sales", "--role", "ExampleTeam-sales"))
+                    .containsExactly("ExampleTeam-delivery", "ExampleTeam-sales");
+            assertThat(cli(token, "get", type)).containsExactly("ExampleTeam-delivery", "ExampleTeam-sales");
             assertThat(cli(token, "set", type, "--clear")).isEmpty();
             assertThat(cli(token, "get", type)).isEmpty();
         }

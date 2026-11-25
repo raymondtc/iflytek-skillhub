@@ -76,8 +76,8 @@ class BusinessRoleHttpIntegrationTest {
             mvc.perform(get(path).with(authentication(actor("role-owner", Set.of()))))
                     .andExpect(status().isOk()).andExpect(jsonPath("$.data.businessRoles").isEmpty());
             mvc.perform(put(path).with(authentication(actor("role-owner", Set.of()))).with(csrf())
-                    .contentType("application/json").content("{\"businessRoles\":[\"support\",\"sales\",\"sales\"]}"))
-                    .andExpect(status().isOk()).andExpect(jsonPath("$.data.businessRoles[0]").value("sales"))
+                    .contentType("application/json").content("{\"businessRoles\":[\"ExampleTeam-sales\",\"ExampleTeam-delivery\",\"ExampleTeam-sales\"]}"))
+                    .andExpect(status().isOk()).andExpect(jsonPath("$.data.businessRoles[0]").value("ExampleTeam-delivery"))
                     .andExpect(jsonPath("$.data.businessRoles.length()").value(2));
             em.flush();
             mvc.perform(get(path)).andExpect(status().isForbidden());
@@ -90,7 +90,7 @@ class BusinessRoleHttpIntegrationTest {
                     .contentType("application/json").content("{}"))
                     .andExpect(status().isBadRequest());
             mvc.perform(put(path).with(authentication(actor("role-owner", Set.of()))).with(csrf())
-                    .contentType("application/json").content("{\"businessRoles\":[\"Sales\"]}"))
+                    .contentType("application/json").content("{\"businessRoles\":[\"exampleteam-sales\"]}"))
                     .andExpect(status().isBadRequest());
             mvc.perform(get(path).with(authentication(actor("role-owner", Set.of()))))
                     .andExpect(status().isOk()).andExpect(jsonPath("$.data.businessRoles.length()").value(2));

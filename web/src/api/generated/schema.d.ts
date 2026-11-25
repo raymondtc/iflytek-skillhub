@@ -5253,6 +5253,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/web/business-roles/options": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List configured business role keys and display names */
+        get: operations["listBusinessRoleOptions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/business-roles/options": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List configured business role keys and display names */
+        get: operations["listBusinessRoleOptions_1"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/business-roles": {
         parameters: {
             query?: never;
@@ -8772,6 +8806,19 @@ export interface components {
             page?: number;
             /** Format: int32 */
             size?: number;
+        };
+        ApiResponseListBusinessRoleOption: {
+            /** Format: int32 */
+            code?: number;
+            msg?: string;
+            data?: components["schemas"]["BusinessRoleOption"][];
+            /** Format: date-time */
+            timestamp?: string;
+            requestId?: string;
+        };
+        BusinessRoleOption: {
+            key: string;
+            name: string;
         };
         ApiResponseListString: {
             /** Format: int32 */
@@ -19029,6 +19076,46 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["ApiResponsePageResponseGovernanceActivityItemResponse"];
+                };
+            };
+        };
+    };
+    listBusinessRoleOptions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseListBusinessRoleOption"];
+                };
+            };
+        };
+    };
+    listBusinessRoleOptions_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseListBusinessRoleOption"];
                 };
             };
         };

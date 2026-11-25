@@ -1,4 +1,6 @@
 spring:
+  config:
+    import: classpath:business-role-fixtures.yml
   main:
     allow-bean-definition-overriding: true
     banner-mode: "off"

@@ -4,11 +4,43 @@ Business roles are optional, container-level discovery metadata. They do not gra
 change platform/namespace RBAC, enter packages, or change publication, versions, visibility,
 Suite membership, or member snapshots. Existing resources default to `[]`.
 
-Use stable keys shared with consumers, for example `sales`, `customer-support`, or `finance.ap`.
-Keys are case-sensitive, 1–64 characters, start with a lowercase ASCII letter, and contain
-lowercase letters/digits separated by `-`, `_`, or `.`. No role dictionary or role provisioning
-is required. A resource can have up to 32 distinct keys. Replacement deduplicates and sorts keys;
-`null`, omitted fields, and invalid keys are rejected. An empty array explicitly clears roles.
+Role choices are a fixed, server-configured vocabulary. The UI displays the configured name;
+requests, URLs, CLI and storage use its case-sensitive key. No business-specific defaults are
+shipped: `skillhub.business-roles.options` defaults to `[]`. An empty catalog permits clearing
+metadata but rejects assigning any key.
+
+Keep real deployment choices in an external configuration file outside version control. For
+example, an ignored local YAML file can be loaded with
+`SPRING_CONFIG_ADDITIONAL_LOCATION=file:/absolute/path/to/private-config.yaml`. Normal Spring
+Boot external configuration (including `SPRING_APPLICATION_JSON`) can also supply the list:
+
+```yaml
+skillhub:
+  business-roles:
+    options:
+      - key: ExampleTeam-engineering
+        name: Engineering
+      - key: ExampleTeam-sales
+        name: Sales
+```
+
+These are illustrative values, not defaults. Do not commit organization-specific choices.
+No role-management platform or database dictionary is added. Restart Server and refresh the
+browser after changing configuration. Duplicate/invalid keys and blank names fail startup;
+declaration order controls the choice order.
+
+`GET /api/v1/business-roles/options` (also `/api/web`) returns the complete configured list as
+`data: [{"key":"ExampleTeam-engineering","name":"Engineering"}, ...]`, even when no resource uses a choice.
+This public vocabulary does not reveal resource usage or grant access.
+
+Keys are 1–64 ASCII letters/digits, start with a letter, and may use `-`, `_`, or `.` separators.
+Case is preserved: `ExampleTeam-engineering` and `exampleteam-engineering` are different keys. Writes accept
+only configured keys, deduplicate and sort them, with up to 32 distinct values. `null`, omitted
+fields, malformed or unconfigured keys are rejected; `[]` explicitly clears roles.
+
+Existing stored values are not rewritten or deleted when they leave the catalog. GET and exact
+search remain compatible with these keys. The UI marks them as unconfigured, permits cancel
+without writing, and requires explicit removal before saving a configured replacement.
 
 ## Read and replace
 
@@ -24,7 +56,7 @@ PUT /api/v1/suites/{namespace}/{slug}/business-roles
 The same routes exist under `/api/web`. The replacement request has the shape:
 
 ```json
-{"businessRoles": ["customer-support", "sales"]}
+{"businessRoles": ["ExampleTeam-delivery", "ExampleTeam-sales"]}
 ```
 
 GET and PUT response `data` also include `canManageBusinessRoles`, computed from the same
@@ -50,8 +82,8 @@ saved registry; `--token`, `SKILLHUB_TOKEN`, saved credentials). No separate log
 
 ```sh
 skillhub business-roles get @team/demo --type skill --json
-skillhub business-roles set @team/demo --type skill --role sales --role customer-support
-skillhub business-roles set @team/demo --type suite --role sales --role finance.ap
+skillhub business-roles set @team/demo --type skill --role ExampleTeam-sales --role ExampleTeam-engineering
+skillhub business-roles set @team/demo --type suite --role ExampleTeam-sales --role ExampleTeam-engineering
 skillhub business-roles set @team/demo --type suite --clear --json
 ```
 
@@ -63,10 +95,10 @@ before a request. The command updates metadata on the selected registry and retu
 Add one exact `businessRole` key to an existing search request:
 
 ```text
-GET /api/v1/resources?businessRole=sales&resourceType=SKILL&page=0&size=20
-GET /api/v1/resources?businessRole=sales&resourceType=SUITE&page=0&size=20
-GET /api/v1/resources?businessRole=sales&page=0&size=20
-GET /api/web/skills?businessRole=sales&page=0&size=20
+GET /api/v1/resources?businessRole=ExampleTeam-sales&resourceType=SKILL&page=0&size=20
+GET /api/v1/resources?businessRole=ExampleTeam-sales&resourceType=SUITE&page=0&size=20
+GET /api/v1/resources?businessRole=ExampleTeam-sales&page=0&size=20
+GET /api/web/skills?businessRole=ExampleTeam-sales&page=0&size=20
 ```
 
 `/api/web/resources` supports the same filter. Omit `businessRole` to keep previous behavior;
@@ -81,7 +113,11 @@ No search-index refresh is needed when business roles change.
 
 ## Baseline, migration, and development verification
 
-This change starts at deployed upstream `v0.2.23`, commit
+The configured-catalog follow-up starts from the verified deployed company commit
+`6f769ab75e5aa5ee00a4413ad9ebc84ae8b9a4cc`. Existing association tables support these keys as-is;
+this adjustment needs no schema migration or role-data backfill.
+
+The original role implementation starts at upstream `v0.2.23`, commit
 `2fe1a44059f51c1fa2e72ea3f1f3d59942e1e8be`, rather than the fork's default company branch.
 Sealos Deployment and running Pod inventories were read on 2026-11-24 for Server and Web;
 both were on the enterprise mirror's `v0.2.23`. Both mirror image configurations declare the
@@ -127,25 +163,27 @@ uses a random loopback server port. Backend CI does not require Node for ordinar
 
 ## Web UI
 
-Skill search and the Suite catalog expose a searchable single-key role filter. Filters and page
-are URL state; changing a role resets the page. Valid unknown keys return empty results and can
-be cleared. Role chips on details navigate to the matching typed discovery page.
+Skill search and the Suite catalog use a selection-only single-role dropdown. Skill detail
+and Suite management use a checkbox list for multiple roles. Both consume the same configured
+options API; names are displayed and keys are submitted. There is no free-text role creation.
+Filters and page are URL state; changing a role resets the page. Chips show names and link to
+the matching typed discovery page. Clear, cancel, failed-save draft retention and identity-scoped
+caches are preserved. An options-load failure disables selection/writes and offers retry.
+Suite market detail stays read-only. Legacy URL filters can be cleared without rewriting data.
 
-Skill detail and Suite management contain a shared editor: add/remove multiple keys, clear the
-local draft, cancel without writing, or save the complete set. Errors retain the draft; edit
-capabilities and caches are scoped to the authenticated identity. Suite market detail is read-only.
-
-`GET /api/v1/business-roles` (also `/api/web`) returns up to 100 sorted distinct keys from
-currently discoverable resources, with optional `resourceType`, `namespace`, and literal prefix
-`q`. No private or otherwise undiscoverable resource contributes candidates. Unknown keys can
-still be entered manually. This is a read-only facet, not a role directory or a management API.
+`GET /api/v1/business-roles` (also `/api/web`) remains a backward-compatible facet of role keys
+on currently discoverable resources, with optional `resourceType`, `namespace`, and literal
+case-sensitive prefix `q`. Private or otherwise undiscoverable resources do not contribute keys.
+The new UI does not use this usage-based facet for its choices; it always uses `/options`.
 
 Favorites retain their existing object-visibility policy, including accessible private resources.
 `/api/web/me/stars` additionally accepts `businessRole`, `q`, `namespace`, and `sort`; filtering,
 counting and pagination now occur together in the database. Public marketplace ACLs are unchanged.
 
 The real browser regression is `web/e2e/business-roles.spec.ts`. It requires a loopback test server,
-real PostgreSQL/Redis and local package storage, with a disposable PostgreSQL container labeled
+real PostgreSQL/Redis and local package storage. Load the synthetic choices from
+`server/skillhub-app/src/test/resources/business-role-fixtures.yml` via external configuration
+for this test only, with a disposable PostgreSQL container labeled
 `skillhub-task=business-role-ui`. It publishes real private packages, clones their fixture graph for
 pagination and seeds public visibility only in that isolated database. It does not change the public
 scanner policy or upload rate limits. All role reads,

@@ -2797,8 +2797,6 @@
     "filterLabel": "Business role filter",
     "apply": "Apply role",
     "activeFilter": "Role: {{role}}",
-    "invalidKey": "Use 1–64 lowercase letters/digits, starting with a letter; separate words with -, _ or .",
-    "candidatesFailed": "Suggestions are unavailable. You can still enter an exact role key.",
     "retry": "Retry",
     "edit": "Edit roles",
     "hint": "Used for business discovery and filtering.",
@@ -2807,9 +2805,6 @@
     "loadFailed": "Could not load business roles.",
     "empty": "No business roles assigned.",
     "editForm": "Edit business roles",
-    "keyLabel": "Business role key",
-    "keyHelp": "Up to 32 roles. Enter a stable key and press Enter or Add. Duplicates are removed.",
-    "add": "Add role",
     "remove": "Remove {{role}}",
     "clearAll": "Clear all roles",
     "cancel": "Cancel",
@@ -2817,9 +2812,12 @@
     "saving": "Saving…",
     "saved": "Business roles saved",
     "saveFailed": "Could not save roles. Your changes are retained. Check your access and retry.",
-    "tooMany": "You can assign up to 32 business roles.",
-    "addBeforeSave": "Add or remove the unfinished role key before saving.",
     "emptyDraft": "No roles selected. Saving will clear all business roles.",
-    "searchFailed": "Could not load search results. Please retry."
+    "searchFailed": "Could not load search results. Please retry.",
+    "choose": "Select business roles",
+    "selectionHelp": "Select one or more roles, or clear all selections.",
+    "optionsFailed": "Could not load role options. Please retry.",
+    "unconfigured": "Unconfigured role",
+    "legacyWarning": "Some existing roles are no longer configured. Remove them before saving."
   }
 }

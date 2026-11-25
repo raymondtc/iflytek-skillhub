@@ -5,8 +5,7 @@ import { useAuth } from '@/features/auth/use-auth'
 
 export type BusinessRoleResource = 'skills' | 'suites'
 type Metadata = components['schemas']['BusinessRolesResponse']
-const keyPattern = /^[a-z][a-z0-9]*(?:[-_.][a-z0-9]+)*$/
-export const isBusinessRoleKey = (value: string) => value.length <= 64 && keyPattern.test(value)
+export type BusinessRoleOption = components['schemas']['BusinessRoleOption']
 const resourcePath = (type: BusinessRoleResource, namespace: string, slug: string) =>
   `${WEB_API_PREFIX}/${type}/${encodeURIComponent(namespace.replace(/^@/, ''))}/${encodeURIComponent(slug)}/business-roles`
 
@@ -20,15 +19,12 @@ export function useBusinessRoles(type: BusinessRoleResource, namespace: string, 
   })
 }
 
-export function useBusinessRoleCandidates(type: BusinessRoleResource, namespace = '', prefix = '') {
+export function useBusinessRoleOptions() {
   const { user, isLoading } = useAuth()
-  const params = new URLSearchParams({ resourceType: type === 'skills' ? 'SKILL' : 'SUITE' })
-  if (namespace) params.set('namespace', namespace)
-  if (prefix) params.set('q', prefix)
   return useQuery({
-    queryKey: ['business-roles', user?.userId ?? 'guest', 'candidates', type, namespace, prefix],
-    queryFn: () => fetchJson<string[]>(`${WEB_API_PREFIX}/business-roles?${params}`),
-    enabled: !isLoading && prefix.length <= 64 && /^[a-z0-9_.-]*$/.test(prefix),
+    queryKey: ['business-roles', user?.userId ?? 'guest', 'options'],
+    queryFn: () => fetchJson<BusinessRoleOption[]>(`${WEB_API_PREFIX}/business-roles/options`),
+    enabled: !isLoading,
     meta: { skipGlobalErrorHandler: true },
   })
 }

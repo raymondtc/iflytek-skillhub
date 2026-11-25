@@ -9,7 +9,7 @@ public final class BusinessRoles {
     private BusinessRoles() {}
 
     public static String key(String value) {
-        if (value == null || value.length() > 64 || !value.matches("[a-z][a-z0-9]*(?:[-_.][a-z0-9]+)*")) {
+        if (value == null || value.length() > 64 || !value.matches("[A-Za-z][A-Za-z0-9]*(?:[-_.][A-Za-z0-9]+)*")) {
             throw new DomainBadRequestException("business_role.invalid_key");
         }
         return value;

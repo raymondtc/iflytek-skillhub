@@ -31,6 +31,22 @@ class BusinessRoleControllerTest {
     @MockBean BusinessRoleAppService service;
     @MockBean NamespaceMemberRepository namespaceMembers;
 
+    @Test void publishesTheConfiguredKeyNameOptionsWithoutRequiringResourceData() throws Exception {
+        for (String prefix : List.of("/api/v1", "/api/web")) {
+            mvc.perform(get(prefix + "/business-roles/options")).andExpect(status().isOk())
+                    .andExpect(jsonPath("$.data.length()").value(4))
+                    .andExpect(jsonPath("$.data[0].key").value("ExampleTeam-engineering"))
+                    .andExpect(jsonPath("$.data[0].name").value("Engineering"))
+                    .andExpect(jsonPath("$.data[1].key").value("ExampleTeam-sales"))
+                    .andExpect(jsonPath("$.data[1].name").value("Sales"))
+                    .andExpect(jsonPath("$.data[2].key").value("ExampleTeam-delivery"))
+                    .andExpect(jsonPath("$.data[2].name").value("Support"))
+                    .andExpect(jsonPath("$.data[3].key").value("ExampleTeam-leadership"))
+                    .andExpect(jsonPath("$.data[3].name").value("Leadership"));
+        }
+        verifyNoInteractions(service);
+    }
+
     @Test void supportsBothResourceRoutesAndRejectsAnonymousWrites() throws Exception {
         for (String prefix : List.of("/api/v1", "/api/web")) {
             for (String type : List.of("skills", "suites")) {
@@ -54,6 +70,8 @@ class BusinessRoleControllerTest {
     @Test void publishesNewApiShapeInGeneratedOpenApi() throws Exception {
         byte[] schema = mvc.perform(get("/v3/api-docs")).andExpect(status().isOk())
                 .andExpect(jsonPath("$.components.schemas.BusinessRolesRequest.properties.businessRoles.type").value("array"))
+                .andExpect(jsonPath("$.components.schemas.BusinessRoleOption.required[0]").value("key"))
+                .andExpect(jsonPath("$.components.schemas.BusinessRoleOption.required[1]").value("name"))
                 .andExpect(jsonPath("$.paths['/api/v1/{resourceType}/{namespace}/{slug}/business-roles'].put").exists())
                 .andReturn().getResponse().getContentAsByteArray();
         String output = System.getProperty("businessRoles.openapiOutput");
