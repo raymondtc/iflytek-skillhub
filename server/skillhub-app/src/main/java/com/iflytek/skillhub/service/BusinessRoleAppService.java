@@ -36,10 +36,11 @@ public class BusinessRoleAppService {
     private final EntityManager entityManager;
     private final AuditLogService audit;
     private final RequestIdAccessor requestId;
+    private final BusinessRoleCatalog catalog;
 
     public BusinessRoleAppService(NamespaceRepository namespaces, SkillSlugResolutionService skillResolver,
             SkillSuiteRepository suites, SkillQueryService skillQuery, SkillSuiteQueryService suiteQuery,
-            EntityManager entityManager, AuditLogService audit, RequestIdAccessor requestId) {
+            EntityManager entityManager, AuditLogService audit, RequestIdAccessor requestId, BusinessRoleCatalog catalog) {
         this.namespaces = namespaces;
         this.skillResolver = skillResolver;
         this.suites = suites;
@@ -48,6 +49,7 @@ public class BusinessRoleAppService {
         this.entityManager = entityManager;
         this.audit = audit;
         this.requestId = requestId;
+        this.catalog = catalog;
     }
 
     @Transactional(readOnly = true)
@@ -73,6 +75,7 @@ public class BusinessRoleAppService {
             List<String> values, String userId, Map<Long, NamespaceRole> roles,
             Set<String> platformRoles, AuditRequestContext context) {
         List<String> normalized = BusinessRoles.normalize(values);
+        catalog.requireConfigured(normalized);
         Long nsId = namespaceId(namespace);
         Long id;
         List<String> before;

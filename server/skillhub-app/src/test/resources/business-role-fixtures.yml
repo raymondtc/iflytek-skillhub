@@ -1,0 +1,12 @@
+# Synthetic choices for automated tests only.
+skillhub:
+  business-roles:
+    options:
+      - key: ExampleTeam-engineering
+        name: Engineering
+      - key: ExampleTeam-sales
+        name: Sales
+      - key: ExampleTeam-delivery
+        name: Support
+      - key: ExampleTeam-leadership
+        name: Leadership

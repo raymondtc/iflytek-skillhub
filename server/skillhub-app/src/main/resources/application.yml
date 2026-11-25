@@ -134,6 +134,8 @@ spring:
             enable: ${SPRING_MAIL_SMTP_STARTTLS_ENABLE:false}
 
 skillhub:
+  business-roles:
+    options: []
   authoring:
     # Root directory for per-run isolated validation workspaces
     workspace-root: ${SKILLHUB_AUTHORING_WORKSPACE_ROOT:${java.io.tmpdir}/skillhub-authoring}

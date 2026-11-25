@@ -5,6 +5,8 @@ import com.iflytek.skillhub.domain.namespace.NamespaceRole;
 import com.iflytek.skillhub.dto.ApiResponse;
 import com.iflytek.skillhub.dto.ApiResponseFactory;
 import com.iflytek.skillhub.service.BusinessRoleDiscoveryAppService;
+import com.iflytek.skillhub.service.BusinessRoleCatalog;
+import com.iflytek.skillhub.dto.BusinessRoleOption;
 import io.swagger.v3.oas.annotations.Operation;
 import java.util.List;
 import java.util.Map;
@@ -15,8 +17,15 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping({"/api/v1/business-roles", "/api/web/business-roles"})
 public class BusinessRoleCandidateController extends BaseApiController {
     private final BusinessRoleDiscoveryAppService service;
-    public BusinessRoleCandidateController(BusinessRoleDiscoveryAppService service, ApiResponseFactory responses) {
-        super(responses); this.service = service;
+    private final BusinessRoleCatalog catalog;
+    public BusinessRoleCandidateController(BusinessRoleDiscoveryAppService service, BusinessRoleCatalog catalog,
+            ApiResponseFactory responses) {
+        super(responses); this.service = service; this.catalog = catalog;
+    }
+    @GetMapping("/options")
+    @Operation(operationId = "listBusinessRoleOptions", summary = "List configured business role keys and display names")
+    public ApiResponse<List<BusinessRoleOption>> options() {
+        return ok("response.success.read", catalog.options());
     }
     @GetMapping
     @Operation(operationId = "listVisibleBusinessRoles", summary = "Find role keys on currently discoverable resources")

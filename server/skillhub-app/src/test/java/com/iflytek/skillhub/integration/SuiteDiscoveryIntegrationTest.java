@@ -552,26 +552,26 @@ class SuiteDiscoveryIntegrationTest {
         SkillSuite memberSuite = roleSuite(ns, "member", SkillVisibility.NAMESPACE_ONLY);
         SkillSuite privateSuite = roleSuite(ns, "private", SkillVisibility.PRIVATE);
         for (Skill skill : List.of(publicSkill, memberSkill, privateSkill)) {
-            skill.setBusinessRoles(List.of("sales", "support", "sales"));
+            skill.setBusinessRoles(List.of("ExampleTeam-sales", "ExampleTeam-delivery", "ExampleTeam-sales"));
         }
         for (SkillSuite suite : List.of(publicSuite, memberSuite, privateSuite)) {
-            suite.setBusinessRoles(List.of("sales", "support", "sales"));
+            suite.setBusinessRoles(List.of("ExampleTeam-sales", "ExampleTeam-delivery", "ExampleTeam-sales"));
         }
-        privateSkill.setBusinessRoles(List.of("private-only", "sales", "support"));
-        memberSkill.setBusinessRoles(List.of("member-only", "sales", "support"));
+        privateSkill.setBusinessRoles(List.of("private-only", "ExampleTeam-sales", "ExampleTeam-delivery"));
+        memberSkill.setBusinessRoles(List.of("member-only", "ExampleTeam-sales", "ExampleTeam-delivery"));
         entityManager.flush();
         var candidates = new com.iflytek.skillhub.repository.BusinessRoleCandidateQueryRepository(entityManager.getEntityManager());
-        assertThat(candidates.findVisible("", "role-team", "", Set.of())).containsExactly("sales", "support");
+        assertThat(candidates.findVisible("", "role-team", "", Set.of())).containsExactly("ExampleTeam-delivery", "ExampleTeam-sales");
         assertThat(candidates.findVisible("SKILL", "role-team", "", Set.of(ns.getId())))
-                .containsExactly("member-only", "sales", "support");
-        assertThat(candidates.findVisible("SUITE", "role-team", "sup", Set.of())).containsExactly("support");
+                .containsExactly("ExampleTeam-delivery", "ExampleTeam-sales", "member-only");
+        assertThat(candidates.findVisible("SUITE", "role-team", "ExampleTeam-d", Set.of())).containsExactly("ExampleTeam-delivery");
         assertThat(candidates.findVisible("SKILL", "missing", "", Set.of(ns.getId()))).isEmpty();
         entityManager.clear();
         assertThat(entityManager.find(Skill.class, oldSkill.getId()).getBusinessRoles()).isEmpty();
         assertThat(entityManager.find(Skill.class, publicSkill.getId()).getBusinessRoles())
-                .containsExactly("sales", "support");
+                .containsExactly("ExampleTeam-delivery", "ExampleTeam-sales");
         assertThat(entityManager.find(SkillSuite.class, publicSuite.getId()).getBusinessRoles())
-                .containsExactly("sales", "support");
+                .containsExactly("ExampleTeam-delivery", "ExampleTeam-sales");
 
         for (Skill skill : List.of(publicSkill, memberSkill, privateSkill, oldSkill)) {
             entityManager.getEntityManager().createNativeQuery("""
@@ -583,24 +583,24 @@ class SuiteDiscoveryIntegrationTest {
         var skillSearch = new com.iflytek.skillhub.search.postgres.PostgresFullTextQueryService(entityManager.getEntityManager());
         var scope = com.iflytek.skillhub.search.SearchVisibilityScope.anonymous();
         var skillPage = skillSearch.search(new com.iflytek.skillhub.search.SearchQuery(null, ns.getId(), scope,
-                "newest", 0, 1, List.of(), false, "sales"));
+                "newest", 0, 1, List.of(), false, "ExampleTeam-sales"));
         assertThat(skillPage.skillIds()).containsExactly(publicSkill.getId());
         assertThat(skillPage.total()).isEqualTo(1);
         assertThat(skillSearch.search(new com.iflytek.skillhub.search.SearchQuery(null, ns.getId(), scope,
-                "newest", 1, 1, List.of(), false, "sales")).skillIds()).isEmpty();
+                "newest", 1, 1, List.of(), false, "ExampleTeam-sales")).skillIds()).isEmpty();
 
-        var anonymous = appService.search(null, "role-team", null, "newest", 0, 1, Set.of(), List.of(), "sales");
-        var next = appService.search(null, "role-team", null, "newest", 1, 1, Set.of(), List.of(), "sales");
+        var anonymous = appService.search(null, "role-team", null, "newest", 0, 1, Set.of(), List.of(), "ExampleTeam-sales");
+        var next = appService.search(null, "role-team", null, "newest", 1, 1, Set.of(), List.of(), "ExampleTeam-sales");
         assertThat(anonymous.total()).isEqualTo(2);
         assertThat(next.total()).isEqualTo(2);
         assertThat(anonymous.items()).hasSize(1);
         assertThat(next.items()).hasSize(1);
         assertThat(anonymous.items().getFirst().resourceType()).isNotEqualTo(next.items().getFirst().resourceType());
-        assertThat(appService.search(null, "role-team", null, "newest", 2, 1, Set.of(), List.of(), "sales").items()).isEmpty();
-        assertThat(appService.search(null, "role-team", null, "newest", 0, 20, Set.of(ns.getId()), List.of(), "sales").total())
+        assertThat(appService.search(null, "role-team", null, "newest", 2, 1, Set.of(), List.of(), "ExampleTeam-sales").items()).isEmpty();
+        assertThat(appService.search(null, "role-team", null, "newest", 0, 20, Set.of(ns.getId()), List.of(), "ExampleTeam-sales").total())
                 .isEqualTo(4);
-        assertThat(appService.search(null, "role-team", "SKILL", "newest", 0, 20, Set.of(), List.of(), "sales").total()).isEqualTo(1);
-        assertThat(appService.search(null, "role-team", "SUITE", "newest", 0, 20, Set.of(), List.of(), "support").total()).isEqualTo(1);
+        assertThat(appService.search(null, "role-team", "SKILL", "newest", 0, 20, Set.of(), List.of(), "ExampleTeam-sales").total()).isEqualTo(1);
+        assertThat(appService.search(null, "role-team", "SUITE", "newest", 0, 20, Set.of(), List.of(), "ExampleTeam-delivery").total()).isEqualTo(1);
         assertThat(appService.search(null, "role-team", null, "newest", 0, 20, Set.of(), List.of(), "sale").total()).isZero();
         assertThat(appService.search(null, "role-team", null, "newest", 0, 20, Set.of(), List.of()).total()).isEqualTo(3);
 
@@ -608,8 +608,8 @@ class SuiteDiscoveryIntegrationTest {
         entityManager.find(Skill.class, publicSkill.getId()).setBusinessRoles(List.of());
         entityManager.find(SkillSuite.class, publicSuite.getId()).setBusinessRoles(List.of());
         entityManager.flush();
-        assertThat(appService.search(null, "role-team", null, "newest", 0, 20, Set.of(), List.of(), "sales").total()).isZero();
-        assertThat(appService.search(null, "role-team", null, "newest", 0, 20, Set.of(ns.getId()), List.of(), "sales").total()).isEqualTo(2);
+        assertThat(appService.search(null, "role-team", null, "newest", 0, 20, Set.of(), List.of(), "ExampleTeam-sales").total()).isZero();
+        assertThat(appService.search(null, "role-team", null, "newest", 0, 20, Set.of(ns.getId()), List.of(), "ExampleTeam-sales").total()).isEqualTo(2);
     }
 
     private SkillSuite roleSuite(Namespace ns, String slug, SkillVisibility visibility) {

@@ -16,7 +16,7 @@ public class BusinessRoleDiscoveryAppService {
         String type = resourceType == null ? "" : resourceType.toUpperCase(Locale.ROOT);
         if (!Set.of("", "SKILL", "SUITE").contains(type)) throw new DomainBadRequestException("business_role.invalid_type");
         String query = prefix == null ? "" : prefix;
-        if (query.length() > 64 || !query.matches("[a-z0-9_.-]*")) throw new DomainBadRequestException("business_role.invalid_key");
+        if (query.length() > 64 || !query.matches("[A-Za-z0-9_.-]*")) throw new DomainBadRequestException("business_role.invalid_key");
         return repository.findVisible(type, namespace == null ? "" : namespace.replaceFirst("^@", ""), query, members);
     }
 }
